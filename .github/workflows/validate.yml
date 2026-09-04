@@ -27,8 +27,23 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Set up Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: services/skills-mcp/package-lock.json
+
       - name: Validate repository contracts and policy
-        run: python tooling/validate_repository.py
+        run: |
+          python tooling/validate_repository.py
+          python tooling/build_skill_index.py --check
 
       - name: Run validator tests
         run: python -m unittest discover -s tooling/tests -p "test_*.py" -v
+
+      - name: Validate MCP Worker
+        working-directory: services/skills-mcp
+        run: |
+          npm ci
+          npm run check

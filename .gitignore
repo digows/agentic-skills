@@ -15,3 +15,10 @@ htmlcov/
 .env
 .env.*
 !.env.example
+
+# Node and Cloudflare Workers
+node_modules/
+.wrangler/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example

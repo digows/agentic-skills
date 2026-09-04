@@ -401,7 +401,7 @@ def _validate_schema_documents(root: Path, errors: list[ValidationError]) -> Non
 
 
 def _iter_text_files(root: Path) -> Iterable[Path]:
-    ignored_directories = {".git", "__pycache__", ".pytest_cache"}
+    ignored_directories = {".git", ".pytest_cache", ".wrangler", "__pycache__", "node_modules"}
     for path in root.rglob("*"):
         if not path.is_file() or any(part in ignored_directories for part in path.parts):
             continue
@@ -438,7 +438,7 @@ def _validate_scripts(root: Path, errors: list[ValidationError]) -> None:
 
 def _validate_links(root: Path, errors: list[ValidationError]) -> None:
     for path in root.rglob("*.md"):
-        if ".git" in path.parts:
+        if ".git" in path.parts or "node_modules" in path.parts:
             continue
         content = path.read_text(encoding="utf-8")
         for target in MARKDOWN_LINK_PATTERN.findall(content):
@@ -494,7 +494,9 @@ def validate_repository(root: Path) -> list[ValidationError]:
         root / "schemas" / "catalog.schema.json",
         root / "schemas" / "evaluation.schema.json",
         root / "catalog" / "taxonomy.json",
-        root / "catalog" / "planned-skills.json"
+        root / "catalog" / "planned-skills.json",
+        root / "catalog" / "index.json",
+        root / "services" / "skills-mcp" / "package-lock.json"
     ]
     for path in required_files:
         if not path.is_file():
