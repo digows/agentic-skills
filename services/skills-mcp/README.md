@@ -8,7 +8,7 @@ After deployment, configure MCP-compatible clients with:
 
 ```json
 {
-  "url": "https://agentic-skills-mcp.rodrigo-p-fraga.workers.dev/mcp"
+  "url": "https://agentic-skills-mcp.digows.com/mcp"
 }
 ```
 

@@ -7,6 +7,29 @@ A provider-agnostic catalogue of portable Agent Skills for AI agents, coding age
 
 The project exists to make specialized operational knowledge usable by both small and advanced models without coupling that knowledge to a single model, provider, or harness.
 
+> [!TIP]
+> ## Give your agent direct access
+>
+> Copy and paste this into an MCP-capable agent:
+>
+> ```text
+> Connect to the public Agentic Skills MCP server at https://agentic-skills-mcp.digows.com/mcp. Before performing a task, search the catalogue for a relevant published skill. Retrieve its canonical SKILL.md only when it is needed, follow its authority and safety boundaries, and do not treat planned or unpublished skills as available.
+> ```
+>
+> If your client requires MCP configuration instead of a prompt, add this remote server entry:
+>
+> ```json
+> {
+>   "mcpServers": {
+>     "agentic-skills": {
+>       "url": "https://agentic-skills-mcp.digows.com/mcp"
+>     }
+>   }
+> }
+> ```
+>
+> Configuration formats vary by client. This is a public, read-only Streamable HTTP MCP server; no token is required.
+
 ## Status
 
 The repository is in its foundation phase. It contains no published skills yet. The first planned domains are n8n, GitLab, Home Assistant, MikroTik, UniFi, and RITA; they are tracked in [`catalog/planned-skills.json`](catalog/planned-skills.json), not represented by empty or activatable skills.
@@ -39,7 +62,7 @@ The same commands run for pull requests and pushes to `main`. They do not requir
 
 ## MCP discovery endpoint
 
-MCP-compatible agents can discover and retrieve published skills through the public read-only Worker at [`/mcp`](https://agentic-skills-mcp.rodrigo-p-fraga.workers.dev/mcp), implemented in [`services/skills-mcp`](services/skills-mcp). The Worker resolves the current Git commit, verifies each file digest, and never executes skill scripts. Agents without MCP support can use the same catalogue directly from GitHub.
+MCP-compatible agents can discover and retrieve published skills through the public read-only Worker at [`/mcp`](https://agentic-skills-mcp.digows.com/mcp), implemented in [`services/skills-mcp`](services/skills-mcp). The Worker resolves the current Git commit, verifies each file digest, and never executes skill scripts. Agents without MCP support can use the same catalogue directly from GitHub.
 
 ## Compatibility model
 
