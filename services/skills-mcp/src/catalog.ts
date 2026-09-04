@@ -69,6 +69,7 @@ export class GitHubCatalogSource
     {
       const sourceCommit = await this.fetchCommit();
       const indexResponse = await this.fetchImplementation(this.rawUrl(sourceCommit, "catalog/index.json"), {
+        headers: { "User-Agent": "agentic-skills-mcp/0.1.0" },
         cf: { cacheEverything: true, cacheTtl: 300 }
       } as RequestInit);
       if (!indexResponse.ok)
@@ -103,6 +104,7 @@ export class GitHubCatalogSource
       throw new CatalogError("Requested file exceeds the maximum allowed size.");
     }
     const response = await this.fetchImplementation(this.rawUrl(catalog.sourceCommit, `skills/${skill.id}/${file.path}`), {
+      headers: { "User-Agent": "agentic-skills-mcp/0.1.0" },
       cf: { cacheEverything: true, cacheTtl: 3600 }
     } as RequestInit);
     if (!response.ok)
@@ -124,7 +126,10 @@ export class GitHubCatalogSource
   private async fetchCommit(): Promise<string>
   {
     const response = await this.fetchImplementation(`https://api.github.com/repos/${this.repository}/git/ref/heads/${this.branch}`, {
-      headers: { Accept: "application/vnd.github+json" },
+      headers: {
+        Accept: "application/vnd.github+json",
+        "User-Agent": "agentic-skills-mcp/0.1.0"
+      },
       cf: { cacheEverything: true, cacheTtl: 300 }
     } as RequestInit);
     if (!response.ok)
