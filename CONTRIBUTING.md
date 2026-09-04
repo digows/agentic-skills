@@ -37,4 +37,4 @@ Keep a pull request focused on one concern. Changes that alter the catalogue con
 
 ## License
 
-The repository license has not yet been selected. Do not submit substantive contributions until maintainers add a project license and contributor terms.
+This project is licensed under the [Apache License 2.0](LICENSE). Unless you explicitly state otherwise, contributions submitted for inclusion are provided under that license.
