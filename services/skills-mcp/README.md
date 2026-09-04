@@ -8,7 +8,7 @@ After deployment, configure MCP-compatible clients with:
 
 ```json
 {
-  "url": "https://agentic-skills-mcp.digows.com/mcp"
+  "url": "https://agentic-skills-mcp.digows.com"
 }
 ```
 
@@ -31,4 +31,4 @@ npm run check
 npm run dev
 ```
 
-Use an MCP inspector or a compatible client to test `http://localhost:8787/mcp`. `GET /healthz` is only an operational health check; it is not an MCP endpoint.
+Use an MCP inspector or a compatible client to test `http://localhost:8787`. `GET /healthz` is only an operational health check; it is not an MCP endpoint.

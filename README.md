@@ -13,7 +13,7 @@ The project exists to make specialized operational knowledge usable by both smal
 > Copy and paste this into an MCP-capable agent:
 >
 > ```text
-> Connect to the public Agentic Skills MCP server at https://agentic-skills-mcp.digows.com/mcp. Before performing a task, search the catalogue for a relevant published skill. Retrieve its canonical SKILL.md only when it is needed, follow its authority and safety boundaries, and do not treat planned or unpublished skills as available.
+> Connect to the public Agentic Skills MCP server at https://agentic-skills-mcp.digows.com. Before performing a task, search the catalogue for a relevant published skill. Retrieve its canonical SKILL.md only when it is needed, follow its authority and safety boundaries, and do not treat planned or unpublished skills as available.
 > ```
 >
 > If your client requires MCP configuration instead of a prompt, add this remote server entry:
@@ -22,7 +22,7 @@ The project exists to make specialized operational knowledge usable by both smal
 > {
 >   "mcpServers": {
 >     "agentic-skills": {
->       "url": "https://agentic-skills-mcp.digows.com/mcp"
+>       "url": "https://agentic-skills-mcp.digows.com"
 >     }
 >   }
 > }
@@ -62,7 +62,7 @@ The same commands run for pull requests and pushes to `main`. They do not requir
 
 ## MCP discovery endpoint
 
-MCP-compatible agents can discover and retrieve published skills through the public read-only Worker at [`/mcp`](https://agentic-skills-mcp.digows.com/mcp), implemented in [`services/skills-mcp`](services/skills-mcp). The Worker resolves the current Git commit, verifies each file digest, and never executes skill scripts. Agents without MCP support can use the same catalogue directly from GitHub.
+MCP-compatible agents can discover and retrieve published skills through the public read-only Worker at [agentic-skills-mcp.digows.com](https://agentic-skills-mcp.digows.com), implemented in [`services/skills-mcp`](services/skills-mcp). The Worker resolves the current Git commit, verifies each file digest, and never executes skill scripts. Agents without MCP support can use the same catalogue directly from GitHub.
 
 ## Compatibility model
 

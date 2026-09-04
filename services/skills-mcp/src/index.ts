@@ -4,6 +4,7 @@ import { z } from "zod";
 import { CatalogError, findSkill, GitHubCatalogSource, listSkills, pageSkills, searchSkills } from "./catalog";
 
 const source = new GitHubCatalogSource((input, init) => fetch(input, init));
+const handleMcp = createMcpHandler(createServer);
 const LIMIT_SCHEMA = z.number().int().min(1).max(25).default(10);
 const CURSOR_SCHEMA = z.number().int().min(0).default(0);
 const IDENTIFIER_SCHEMA = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(80);
@@ -86,10 +87,16 @@ async function respond(operation: () => Promise<unknown>)
 export default {
   fetch(request, environment, executionContext)
   {
-    if (new URL(request.url).pathname === "/healthz")
+    const url = new URL(request.url);
+    if (url.pathname === "/healthz")
     {
       return Response.json({ service: "agentic-skills-mcp", status: "ok" });
     }
-    return createMcpHandler(createServer)(request, environment, executionContext);
+    if (url.pathname !== "/")
+    {
+      return new Response("Not Found", { status: 404 });
+    }
+    url.pathname = "/mcp";
+    return handleMcp(new Request(url, request), environment, executionContext);
   }
 } satisfies ExportedHandler;

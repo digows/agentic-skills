@@ -23,7 +23,7 @@ Implement a Cloudflare Worker in this repository; generate and validate a compac
 # Acceptance criteria
 
 - A generated index lists published skills with stable identifiers, compact discovery metadata, source commit, and SHA-256 digest.
-- `/mcp` supports compatible stateless MCP clients and exposes bounded list, search, skill, and skill-file retrieval.
+- The root endpoint supports compatible stateless MCP clients and exposes bounded list, search, skill, and skill-file retrieval.
 - Inputs, result sizes, relative paths, GitHub origins, and file hashes are validated; no arbitrary URL fetch or script execution is possible.
 - Unit and integration tests cover discovery, pagination, retrieval, invalid input, digest mismatch, stale-cache fallback, and protocol tool listing.
 - CI validates the Worker, index generation, package lock, and existing repository gates.
