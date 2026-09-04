@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local tooling and editor state
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local environment files must never be committed.
+.env
+.env.*
+!.env.example

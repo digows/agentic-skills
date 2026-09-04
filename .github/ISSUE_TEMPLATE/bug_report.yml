@@ -1,0 +1,30 @@
+name: Bug report
+description: Report a defect in repository tooling, a published skill, or documentation.
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include credentials, private endpoints, customer data, or production exports. Use a private security advisory for security issues.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: State the observed and expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Provide the smallest safe reproduction, including the relevant skill version or commit.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include harness, model, operating system, and provider version when relevant.
+    validations:
+      required: true

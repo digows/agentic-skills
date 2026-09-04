@@ -1,0 +1,33 @@
+name: Skill request
+description: Propose a new portable skill or a focused improvement to an existing one.
+title: "skill: "
+labels: [skill-request]
+body:
+  - type: input
+    id: upstream
+    attributes:
+      label: Official upstream documentation
+      description: Link only to documentation that is public and safe to share.
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: Describe the concrete task, not a broad technology area.
+    validations:
+      required: true
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Authority and risk boundaries
+      description: State credentials, side effects, sensitive data, and operations the skill must refuse.
+    validations:
+      required: true
+  - type: textarea
+    id: evaluation
+    attributes:
+      label: Evaluation ideas
+      description: Provide representative success, refusal, and near-miss prompts.
+    validations:
+      required: true

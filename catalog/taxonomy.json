@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "categories": [
+    "software-engineering",
+    "data-and-ai",
+    "infrastructure-and-operations",
+    "security-and-compliance",
+    "research-and-knowledge",
+    "documents-and-content",
+    "product-and-design",
+    "business-and-productivity",
+    "agent-development"
+  ],
+  "facet_types": {
+    "capability": [
+      "analysis",
+      "automation",
+      "configuration",
+      "integration",
+      "investigation",
+      "reporting"
+    ],
+    "execution": [
+      "local",
+      "remote-api",
+      "network-device",
+      "service-control"
+    ],
+    "side_effect": [
+      "read-only",
+      "bounded-write",
+      "external-write",
+      "privileged-operation"
+    ]
+  }
+}

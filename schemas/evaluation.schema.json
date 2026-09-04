@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/digows/agentic-skills/blob/main/schemas/evaluation.schema.json",
+  "title": "Agentic Skills evaluation definition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "skill_id", "cases"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "skill_id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "prompt", "kind", "expected_outcome", "human_review_required"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9-]*[a-z0-9])?$" },
+          "prompt": { "type": "string", "minLength": 1 },
+          "kind": { "enum": ["success", "failure", "regression", "selection"] },
+          "expected_outcome": { "type": "string", "minLength": 1 },
+          "human_review_required": { "type": "boolean" },
+          "tags": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

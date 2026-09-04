@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.0",
+  "items": [
+    {
+      "id": "n8n",
+      "title": "n8n Public API",
+      "status": "planned",
+      "category": "infrastructure-and-operations",
+      "facets": ["automation", "integration", "remote-api", "external-write"],
+      "risk": "high",
+      "upstream": "https://docs.n8n.io/api/",
+      "scope": "Safe operation through the documented n8n public API with explicit authority boundaries."
+    },
+    {
+      "id": "gitlab",
+      "title": "GitLab REST API",
+      "status": "planned",
+      "category": "software-engineering",
+      "facets": ["automation", "integration", "remote-api", "external-write"],
+      "risk": "high",
+      "upstream": "https://docs.gitlab.com/api/rest/",
+      "scope": "Project, issue, merge-request, pipeline, and repository operations through the documented REST API."
+    },
+    {
+      "id": "home-assistant",
+      "title": "Home Assistant REST API",
+      "status": "planned",
+      "category": "infrastructure-and-operations",
+      "facets": ["automation", "integration", "remote-api", "external-write"],
+      "risk": "high",
+      "upstream": "https://developers.home-assistant.io/docs/api/rest/",
+      "scope": "Home Assistant state inspection and service operations with explicit confirmation boundaries."
+    },
+    {
+      "id": "mikrotik",
+      "title": "MikroTik RouterOS API",
+      "status": "planned",
+      "category": "infrastructure-and-operations",
+      "facets": ["configuration", "network-device", "privileged-operation"],
+      "risk": "critical",
+      "upstream": "https://help.mikrotik.com/docs/spaces/ROS/pages/47579160/API",
+      "scope": "RouterOS inspection and bounded configuration through the documented API."
+    },
+    {
+      "id": "unifi",
+      "title": "UniFi Network API",
+      "status": "planned",
+      "category": "infrastructure-and-operations",
+      "facets": ["configuration", "network-device", "privileged-operation"],
+      "risk": "critical",
+      "upstream": "https://developer.ui.com/",
+      "scope": "UniFi Network inspection and bounded configuration through the documented API."
+    },
+    {
+      "id": "rita",
+      "title": "RITA Network Threat Analytics",
+      "status": "planned",
+      "category": "security-and-compliance",
+      "facets": ["analysis", "investigation", "local", "read-only"],
+      "risk": "high",
+      "upstream": "https://github.com/activecm/rita",
+      "scope": "Network threat analytics and investigation using RITA outputs without exposing sensitive telemetry."
+    }
+  ]
+}
