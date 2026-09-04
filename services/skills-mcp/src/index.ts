@@ -3,7 +3,7 @@ import { createMcpHandler } from "agents/mcp/server";
 import { z } from "zod";
 import { CatalogError, findSkill, GitHubCatalogSource, listSkills, pageSkills, searchSkills } from "./catalog";
 
-const source = new GitHubCatalogSource(fetch);
+const source = new GitHubCatalogSource((input, init) => fetch(input, init));
 const LIMIT_SCHEMA = z.number().int().min(1).max(25).default(10);
 const CURSOR_SCHEMA = z.number().int().min(0).default(0);
 const IDENTIFIER_SCHEMA = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).max(80);
@@ -74,6 +74,10 @@ async function respond(operation: () => Promise<unknown>)
   }
   catch (error)
   {
+    if (!(error instanceof CatalogError))
+    {
+      console.error("MCP catalog operation failed", error);
+    }
     const message = error instanceof CatalogError ? error.message : "Catalog service is temporarily unavailable.";
     return { content: [{ type: "text" as const, text: JSON.stringify({ error: message }) }], isError: true };
   }
