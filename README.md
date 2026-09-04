@@ -39,7 +39,7 @@ The same commands run for pull requests and pushes to `main`. They do not requir
 
 ## MCP discovery endpoint
 
-MCP-compatible agents can discover and retrieve published skills through the public read-only Worker in [`services/skills-mcp`](services/skills-mcp). The Worker resolves the current Git commit, verifies each file digest, and never executes skill scripts. Agents without MCP support can use the same catalogue directly from GitHub.
+MCP-compatible agents can discover and retrieve published skills through the public read-only Worker at [`/mcp`](https://agentic-skills-mcp.rodrigo-p-fraga.workers.dev/mcp), implemented in [`services/skills-mcp`](services/skills-mcp). The Worker resolves the current Git commit, verifies each file digest, and never executes skill scripts. Agents without MCP support can use the same catalogue directly from GitHub.
 
 ## Compatibility model
 
