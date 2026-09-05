@@ -189,7 +189,7 @@ def _validate_catalog_sidecar(path: Path, errors: list[ValidationError]) -> None
         "schema_version", "id", "version", "status", "category", "facets", "risk", "source",
         "requirements", "compatibility", "evaluations"
     }
-    allowed_keys = required_keys
+    allowed_keys = required_keys | {"authentication"}
     catalog = _validate_required_keys(catalog, required_keys, allowed_keys, path, "catalog", errors)
     if catalog is None:
         return
@@ -238,6 +238,36 @@ def _validate_catalog_sidecar(path: Path, errors: list[ValidationError]) -> None
             _is_nonempty_string(item) for item in requirements["tools"]
         ):
             errors.append(ValidationError(path, "catalog requirements tools must be a string array"))
+
+    authentication = catalog.get("authentication")
+    credentials = requirements.get("credentials") if requirements is not None else None
+    if isinstance(credentials, list) and credentials and authentication is None:
+        errors.append(ValidationError(path, "catalog requires authentication metadata when credentials are declared"))
+    if authentication is not None:
+        authentication = _validate_required_keys(
+            authentication,
+            {"methods", "target_binding", "prompting", "failure_behavior"},
+            {"methods", "target_binding", "prompting", "failure_behavior"},
+            path,
+            "catalog authentication",
+            errors
+        )
+        if authentication is not None:
+            methods = authentication.get("methods")
+            if not isinstance(methods, list) or not methods or not all(_is_nonempty_string(method) for method in methods):
+                errors.append(ValidationError(path, "catalog authentication methods must be a non-empty string array"))
+            elif len(methods) != len(set(methods)):
+                errors.append(ValidationError(path, "catalog authentication methods must be unique"))
+            if authentication.get("target_binding") != "exact-target":
+                errors.append(ValidationError(path, "catalog authentication target_binding must be 'exact-target'"))
+            if authentication.get("prompting") != "when-missing-or-invalid":
+                errors.append(ValidationError(path, "catalog authentication prompting must be 'when-missing-or-invalid'"))
+            if authentication.get("failure_behavior") != "stop":
+                errors.append(ValidationError(path, "catalog authentication failure_behavior must be 'stop'"))
+    if isinstance(credentials, list) and credentials:
+        skill_path = path.parent / "SKILL.md"
+        if skill_path.is_file() and not re.search(r"^## Authentication\\s*$", skill_path.read_text(encoding="utf-8"), re.MULTILINE):
+            errors.append(ValidationError(skill_path, "authenticated skill must contain an '## Authentication' section"))
 
     compatibility = catalog.get("compatibility")
     if not isinstance(compatibility, list):

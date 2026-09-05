@@ -8,7 +8,8 @@ Thanks for helping build a portable, trustworthy skill catalogue.
 2. Keep a portable skill in its primary category directory: `skills/<category>/<skill-id>/`. The directory category must match `catalog.json.category`.
 3. Add `SKILL.md`, `catalog.json`, and `evals/definition.json` together for every published skill.
 4. Keep provider-specific packaging in `adapters/<provider>/`; do not add provider-only fields to canonical frontmatter.
-5. Run the local quality gate:
+5. For a skill that requires credentials, follow [`docs/authentication-contract.md`](docs/authentication-contract.md). Do not commit hosts, secret references, or credential values.
+6. Run the local quality gate:
 
    ```bash
    python3 tooling/validate_repository.py
@@ -21,6 +22,7 @@ Thanks for helping build a portable, trustworthy skill catalogue.
 - Make the `description` specific enough for reliable skill selection, including meaningful near-misses where useful.
 - Prefer short procedures, explicit defaults, checklists, and deterministic scripts over broad prose.
 - State prerequisites, authority boundaries, side effects, idempotency behavior, and failure handling.
+- For authenticated skills, resolve the explicit target before the credential, bind the credential to that target only, and stop on authentication failure without trying another profile.
 - Add evaluations with realistic prompts and deterministic assertions. Compare against a no-skill baseline before calling a skill beneficial.
 - Add compatibility evidence rather than claiming universal support.
 

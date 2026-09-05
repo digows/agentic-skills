@@ -33,6 +33,8 @@ skills/<category>/<skill-id>/
 - requirements and compatibility evidence; and
 - evaluation definition and report references.
 
+When `requirements.credentials` is non-empty, `catalog.json` must also contain the portable `authentication` policy defined in [`authentication-contract.md`](authentication-contract.md), and `SKILL.md` must contain an `## Authentication` section. The policy records how an agent must resolve and recover authentication; it never contains a secret, host inventory, or runtime-specific secret path.
+
 Categories are stable, broad groups in [`catalog/taxonomy.json`](../catalog/taxonomy.json). Facets describe the capability, artifact, execution context, and side effect without creating a directory hierarchy.
 
 ## Evaluations

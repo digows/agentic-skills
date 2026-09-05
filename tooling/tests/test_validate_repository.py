@@ -116,6 +116,60 @@ class ValidateRepositoryTests(unittest.TestCase):
             validator._validate_catalog_sidecar(path, errors)
             self.assertTrue(any("must match the skill category directory" in error.message for error in errors))
 
+    def test_credentials_require_authentication_policy(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            path = Path(temporary_directory) / "skills" / "software-engineering" / "example-skill" / "catalog.json"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                """{
+  "schema_version": "1.0",
+  "id": "example-skill",
+  "version": "1.0.0",
+  "status": "published",
+  "category": "software-engineering",
+  "facets": ["automation"],
+  "risk": "low",
+  "source": {"upstream": "https://example.com", "reviewed_at": "2026-09-05"},
+  "requirements": {"credentials": ["api-key"], "network_access": true, "tools": []},
+  "compatibility": [],
+  "evaluations": {"definition": "evals/definition.json", "baseline_report": "baseline", "skill_report": "skill"}
+}""",
+                encoding="utf-8"
+            )
+            errors: list[validator.ValidationError] = []
+            validator._validate_catalog_sidecar(path, errors)
+            self.assertTrue(any("requires authentication metadata" in error.message for error in errors))
+
+    def test_authenticated_skill_requires_authentication_section(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            skill_directory = Path(temporary_directory) / "skills" / "software-engineering" / "example-skill"
+            skill_directory.mkdir(parents=True)
+            (skill_directory / "SKILL.md").write_text(
+                "---\nname: example-skill\ndescription: Example.\n---\n# Example\n",
+                encoding="utf-8"
+            )
+            catalog_path = skill_directory / "catalog.json"
+            catalog_path.write_text(
+                """{
+  "schema_version": "1.0",
+  "id": "example-skill",
+  "version": "1.0.0",
+  "status": "published",
+  "category": "software-engineering",
+  "facets": ["automation"],
+  "risk": "low",
+  "source": {"upstream": "https://example.com", "reviewed_at": "2026-09-05"},
+  "requirements": {"credentials": ["api-key"], "network_access": true, "tools": []},
+  "authentication": {"methods": ["api-key"], "target_binding": "exact-target", "prompting": "when-missing-or-invalid", "failure_behavior": "stop"},
+  "compatibility": [],
+  "evaluations": {"definition": "evals/definition.json", "baseline_report": "baseline", "skill_report": "skill"}
+}""",
+                encoding="utf-8"
+            )
+            errors: list[validator.ValidationError] = []
+            validator._validate_catalog_sidecar(catalog_path, errors)
+            self.assertTrue(any("must contain an '## Authentication' section" in error.message for error in errors))
+
 
 if __name__ == "__main__":
     unittest.main()
