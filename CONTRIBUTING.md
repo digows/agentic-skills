@@ -2,6 +2,8 @@
 
 Thanks for helping build a portable, trustworthy skill catalogue.
 
+Read [`docs/authoring-skills.md`](docs/authoring-skills.md) before creating, changing, or publishing a skill. It is the single agent-oriented workflow for research, upstream federation, OpenAPI, authentication, evaluation, validation, and publication. This document is the contribution checklist.
+
 ## Before opening a pull request
 
 1. Read [`docs/catalog-contract.md`](docs/catalog-contract.md).

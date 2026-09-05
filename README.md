@@ -75,7 +75,7 @@ Skills that need credentials follow the portable [authentication contract](docs/
 
 Skills that access network services also declare [upstream compatibility](docs/upstream-compatibility-contract.md): supported service/API versions, how capabilities are discovered on the selected target, and exact evaluated evidence. This is distinct from harness compatibility.
 
-See [`docs/catalog-contract.md`](docs/catalog-contract.md) before adding a skill and [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a pull request.
+Read [`docs/authoring-skills.md`](docs/authoring-skills.md) before adding or changing a skill. It consolidates the catalogue decisions and execution flow for human and agent contributors. See [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a pull request.
 
 ## Planned domains
 
