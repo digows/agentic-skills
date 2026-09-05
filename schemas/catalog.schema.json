@@ -71,15 +71,29 @@
             "reference": { "type": "string", "minLength": 1 }
           }
         },
-        "openapi_contract": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["source_url", "target_path"],
-          "properties": {
-            "source_url": { "type": "string", "format": "uri" },
-            "target_path": { "type": "string", "pattern": "^/" },
-            "swagger_ui_path": { "type": "string", "pattern": "^/" }
-          }
+        "api_contract_discovery": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["result", "source_url", "target_path"],
+              "properties": {
+                "result": { "const": "openapi" },
+                "source_url": { "type": "string", "format": "uri" },
+                "target_path": { "type": "string", "pattern": "^/" },
+                "swagger_ui_path": { "type": "string", "pattern": "^/" }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["result", "absence_evidence_url"],
+              "properties": {
+                "result": { "const": "not-published" },
+                "absence_evidence_url": { "type": "string", "format": "uri" }
+              }
+            }
+          ]
         },
         "evidence": {
           "type": "array",
@@ -139,6 +153,20 @@
     }
   },
   "allOf": [
+    {
+      "if": {
+        "properties": {
+          "requirements": {
+            "properties": {
+              "network_access": { "const": true }
+            }
+          }
+        }
+      },
+      "then": {
+        "required": ["api_contract_discovery"]
+      }
+    },
     {
       "if": {
         "properties": {

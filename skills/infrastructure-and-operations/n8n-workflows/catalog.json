@@ -15,6 +15,12 @@
     "network_access": true,
     "tools": ["n8n instance MCP client or HTTP client"]
   },
+  "api_contract_discovery": {
+    "result": "openapi",
+    "source_url": "https://github.com/n8n-io/n8n/blob/master/packages/cli/src/public-api/v1/openapi.yml",
+    "target_path": "/api/v1/openapi.yml",
+    "swagger_ui_path": "/api/v1/docs"
+  },
   "authentication": {
     "methods": ["oauth2", "api-key"],
     "target_binding": "exact-target",
@@ -28,11 +34,6 @@
     "capability_discovery": {
       "strategy": "runtime-probe",
       "reference": "Inspect the selected target's MCP tool surface first; for Public API fallback retrieve /api/v1/openapi.yml and use GET /api/v1/discover when exposed."
-    },
-    "openapi_contract": {
-      "source_url": "https://github.com/n8n-io/n8n/blob/master/packages/cli/src/public-api/v1/openapi.yml",
-      "target_path": "/api/v1/openapi.yml",
-      "swagger_ui_path": "/api/v1/docs"
     },
     "evidence": []
   },

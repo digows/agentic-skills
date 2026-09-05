@@ -189,7 +189,7 @@ def _validate_catalog_sidecar(path: Path, errors: list[ValidationError]) -> None
         "schema_version", "id", "version", "status", "category", "facets", "risk", "source",
         "requirements", "compatibility", "evaluations"
     }
-    allowed_keys = required_keys | {"authentication", "upstream_compatibility"}
+    allowed_keys = required_keys | {"authentication", "upstream_compatibility", "api_contract_discovery"}
     catalog = _validate_required_keys(catalog, required_keys, allowed_keys, path, "catalog", errors)
     if catalog is None:
         return
@@ -239,6 +239,45 @@ def _validate_catalog_sidecar(path: Path, errors: list[ValidationError]) -> None
         ):
             errors.append(ValidationError(path, "catalog requirements tools must be a string array"))
 
+    api_contract_discovery = catalog.get("api_contract_discovery")
+    if requirements is not None and requirements.get("network_access") is True and api_contract_discovery is None:
+        errors.append(ValidationError(path, "networked catalog requires api_contract_discovery"))
+    if api_contract_discovery is not None:
+        if not isinstance(api_contract_discovery, dict):
+            errors.append(ValidationError(path, "catalog api_contract_discovery must be an object"))
+        elif api_contract_discovery.get("result") == "openapi":
+            api_contract_discovery = _validate_required_keys(
+                api_contract_discovery,
+                {"result", "source_url", "target_path"},
+                {"result", "source_url", "target_path", "swagger_ui_path"},
+                path,
+                "catalog api_contract_discovery",
+                errors
+            )
+            if api_contract_discovery is not None:
+                if not _is_https_url(api_contract_discovery.get("source_url")):
+                    errors.append(ValidationError(path, "catalog api_contract_discovery source_url must be an HTTPS URL"))
+                if not isinstance(api_contract_discovery.get("target_path"), str) or not api_contract_discovery["target_path"].startswith("/"):
+                    errors.append(ValidationError(path, "catalog api_contract_discovery target_path must be an absolute target path"))
+                swagger_ui_path = api_contract_discovery.get("swagger_ui_path")
+                if swagger_ui_path is not None and (
+                    not isinstance(swagger_ui_path, str) or not swagger_ui_path.startswith("/")
+                ):
+                    errors.append(ValidationError(path, "catalog api_contract_discovery swagger_ui_path must be an absolute target path"))
+        elif api_contract_discovery.get("result") == "not-published":
+            api_contract_discovery = _validate_required_keys(
+                api_contract_discovery,
+                {"result", "absence_evidence_url"},
+                {"result", "absence_evidence_url"},
+                path,
+                "catalog api_contract_discovery",
+                errors
+            )
+            if api_contract_discovery is not None and not _is_https_url(api_contract_discovery.get("absence_evidence_url")):
+                errors.append(ValidationError(path, "catalog api_contract_discovery absence_evidence_url must be an HTTPS URL"))
+        else:
+            errors.append(ValidationError(path, "catalog api_contract_discovery result must be 'openapi' or 'not-published'"))
+
     upstream_compatibility = catalog.get("upstream_compatibility")
     is_published = catalog.get("status") == "published"
     if is_published and requirements is not None and requirements.get("network_access") is True and upstream_compatibility is None:
@@ -247,7 +286,7 @@ def _validate_catalog_sidecar(path: Path, errors: list[ValidationError]) -> None
         upstream_compatibility = _validate_required_keys(
             upstream_compatibility,
             {"service", "api_version", "supported_service_versions", "capability_discovery", "evidence"},
-            {"service", "api_version", "supported_service_versions", "capability_discovery", "openapi_contract", "evidence"},
+            {"service", "api_version", "supported_service_versions", "capability_discovery", "evidence"},
             path,
             "catalog upstream_compatibility",
             errors
@@ -276,26 +315,6 @@ def _validate_catalog_sidecar(path: Path, errors: list[ValidationError]) -> None
                     errors.append(ValidationError(path, "catalog upstream_compatibility capability_discovery strategy is invalid"))
                 if not _is_nonempty_string(capability_discovery.get("reference")):
                     errors.append(ValidationError(path, "catalog upstream_compatibility capability_discovery reference must be a non-empty string"))
-            openapi_contract = upstream_compatibility.get("openapi_contract")
-            if openapi_contract is not None:
-                openapi_contract = _validate_required_keys(
-                    openapi_contract,
-                    {"source_url", "target_path"},
-                    {"source_url", "target_path", "swagger_ui_path"},
-                    path,
-                    "catalog upstream_compatibility openapi_contract",
-                    errors
-                )
-                if openapi_contract is not None:
-                    if not _is_https_url(openapi_contract.get("source_url")):
-                        errors.append(ValidationError(path, "catalog upstream_compatibility openapi_contract source_url must be an HTTPS URL"))
-                    if not isinstance(openapi_contract.get("target_path"), str) or not openapi_contract["target_path"].startswith("/"):
-                        errors.append(ValidationError(path, "catalog upstream_compatibility openapi_contract target_path must be an absolute target path"))
-                    swagger_ui_path = openapi_contract.get("swagger_ui_path")
-                    if swagger_ui_path is not None and (
-                        not isinstance(swagger_ui_path, str) or not swagger_ui_path.startswith("/")
-                    ):
-                        errors.append(ValidationError(path, "catalog upstream_compatibility openapi_contract swagger_ui_path must be an absolute target path"))
             evidence = upstream_compatibility.get("evidence")
             if not isinstance(evidence, list):
                 errors.append(ValidationError(path, "catalog upstream_compatibility evidence must be an array"))
