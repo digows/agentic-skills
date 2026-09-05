@@ -64,5 +64,12 @@
       "content_type": "text/markdown"
     }
   ],
+  "authentication": {
+    "methods": ["n8n-mcp", "api-key"],
+    "target_binding": "exact-target",
+    "prompting": "when-missing-or-invalid",
+    "failure_behavior": "stop",
+    "onboarding": "clipboard-when-available"
+  },
   "compatibility": []
 }

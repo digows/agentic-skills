@@ -162,7 +162,7 @@ class ValidateRepositoryTests(unittest.TestCase):
   "source": {"upstream": "https://example.com", "reviewed_at": "2026-09-05"},
   "requirements": {"credentials": ["api-key"], "network_access": true, "tools": []},
   "api_contract_discovery": {"result": "not-published", "absence_evidence_url": "https://example.com/api"},
-  "authentication": {"methods": ["api-key"], "target_binding": "exact-target", "prompting": "when-missing-or-invalid", "failure_behavior": "stop"},
+  "authentication": {"methods": ["api-key"], "target_binding": "exact-target", "prompting": "when-missing-or-invalid", "failure_behavior": "stop", "onboarding": "clipboard-when-available"},
   "compatibility": [],
   "evaluations": {"definition": "evals/definition.json", "baseline_report": "baseline", "skill_report": "skill"}
 }""",
@@ -171,6 +171,31 @@ class ValidateRepositoryTests(unittest.TestCase):
             errors: list[validator.ValidationError] = []
             validator._validate_catalog_sidecar(catalog_path, errors)
             self.assertTrue(any("must contain an '## Authentication' section" in error.message for error in errors))
+
+    def test_authentication_requires_clipboard_onboarding(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            path = Path(temporary_directory) / "skills" / "software-engineering" / "example-skill" / "catalog.json"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                """{
+  "schema_version": "1.0",
+  "id": "example-skill",
+  "version": "1.0.0",
+  "status": "published",
+  "category": "software-engineering",
+  "facets": ["automation"],
+  "risk": "low",
+  "source": {"upstream": "https://example.com", "reviewed_at": "2026-09-05"},
+  "requirements": {"credentials": ["api-key"], "network_access": false, "tools": []},
+  "authentication": {"methods": ["api-key"], "target_binding": "exact-target", "prompting": "when-missing-or-invalid", "failure_behavior": "stop", "onboarding": "paste-in-chat"},
+  "compatibility": [],
+  "evaluations": {"definition": "evals/definition.json", "baseline_report": "baseline", "skill_report": "skill"}
+}""",
+                encoding="utf-8"
+            )
+            errors: list[validator.ValidationError] = []
+            validator._validate_catalog_sidecar(path, errors)
+            self.assertTrue(any("onboarding must be 'clipboard-when-available'" in error.message for error in errors))
 
     def test_networked_skill_requires_upstream_compatibility(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
