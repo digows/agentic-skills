@@ -240,7 +240,8 @@ def _validate_catalog_sidecar(path: Path, errors: list[ValidationError]) -> None
             errors.append(ValidationError(path, "catalog requirements tools must be a string array"))
 
     upstream_compatibility = catalog.get("upstream_compatibility")
-    if requirements is not None and requirements.get("network_access") is True and upstream_compatibility is None:
+    is_published = catalog.get("status") == "published"
+    if is_published and requirements is not None and requirements.get("network_access") is True and upstream_compatibility is None:
         errors.append(ValidationError(path, "catalog requires upstream_compatibility when network_access is true"))
     if upstream_compatibility is not None:
         upstream_compatibility = _validate_required_keys(
@@ -276,8 +277,10 @@ def _validate_catalog_sidecar(path: Path, errors: list[ValidationError]) -> None
                 if not _is_nonempty_string(capability_discovery.get("reference")):
                     errors.append(ValidationError(path, "catalog upstream_compatibility capability_discovery reference must be a non-empty string"))
             evidence = upstream_compatibility.get("evidence")
-            if not isinstance(evidence, list) or not evidence:
-                errors.append(ValidationError(path, "catalog upstream_compatibility evidence must be a non-empty array"))
+            if not isinstance(evidence, list):
+                errors.append(ValidationError(path, "catalog upstream_compatibility evidence must be an array"))
+            elif is_published and not evidence:
+                errors.append(ValidationError(path, "published catalog upstream_compatibility evidence must be a non-empty array"))
             else:
                 has_passing_evidence = False
                 for index, item in enumerate(evidence):
@@ -299,15 +302,15 @@ def _validate_catalog_sidecar(path: Path, errors: list[ValidationError]) -> None
                         errors.append(ValidationError(path, f"catalog upstream_compatibility evidence[{index}] result is invalid"))
                     if item.get("result") == "pass":
                         has_passing_evidence = True
-                if not has_passing_evidence:
+                if is_published and not has_passing_evidence:
                     errors.append(ValidationError(path, "catalog upstream_compatibility requires at least one passing evidence result"))
         skill_path = path.parent / "SKILL.md"
-        if skill_path.is_file() and not re.search(r"^## Upstream compatibility\\s*$", skill_path.read_text(encoding="utf-8"), re.MULTILINE):
+        if skill_path.is_file() and not re.search(r"^## Upstream compatibility\s*$", skill_path.read_text(encoding="utf-8"), re.MULTILINE):
             errors.append(ValidationError(skill_path, "networked skill must contain an '## Upstream compatibility' section"))
 
     authentication = catalog.get("authentication")
     credentials = requirements.get("credentials") if requirements is not None else None
-    if isinstance(credentials, list) and credentials and authentication is None:
+    if is_published and isinstance(credentials, list) and credentials and authentication is None:
         errors.append(ValidationError(path, "catalog requires authentication metadata when credentials are declared"))
     if authentication is not None:
         authentication = _validate_required_keys(
@@ -332,7 +335,7 @@ def _validate_catalog_sidecar(path: Path, errors: list[ValidationError]) -> None
                 errors.append(ValidationError(path, "catalog authentication failure_behavior must be 'stop'"))
     if isinstance(credentials, list) and credentials:
         skill_path = path.parent / "SKILL.md"
-        if skill_path.is_file() and not re.search(r"^## Authentication\\s*$", skill_path.read_text(encoding="utf-8"), re.MULTILINE):
+        if skill_path.is_file() and not re.search(r"^## Authentication\s*$", skill_path.read_text(encoding="utf-8"), re.MULTILINE):
             errors.append(ValidationError(skill_path, "authenticated skill must contain an '## Authentication' section"))
 
     compatibility = catalog.get("compatibility")
