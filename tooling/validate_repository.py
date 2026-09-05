@@ -42,7 +42,7 @@ ALLOWED_FRONTMATTER_KEYS = {
     "metadata",
     "allowed-tools"
 }
-EXPECTED_PLANNED_IDS = {"n8n", "gitlab", "home-assistant", "mikrotik", "unifi", "rita"}
+EXPECTED_PLANNED_IDS = {"gitlab", "home-assistant", "mikrotik", "unifi", "rita"}
 VALID_CATEGORIES = {
     "software-engineering",
     "data-and-ai",
@@ -55,6 +55,9 @@ VALID_CATEGORIES = {
     "agent-development"
 }
 VALID_RISKS = {"low", "moderate", "high", "critical"}
+UPSTREAM_REPOSITORY_PATTERN = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+COMMIT_SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
 
 @dataclass(frozen=True)
@@ -189,7 +192,7 @@ def _validate_catalog_sidecar(path: Path, errors: list[ValidationError]) -> None
         "schema_version", "id", "version", "status", "category", "facets", "risk", "source",
         "requirements", "compatibility", "evaluations"
     }
-    allowed_keys = required_keys
+    allowed_keys = required_keys | {"authentication", "upstream_compatibility", "api_contract_discovery"}
     catalog = _validate_required_keys(catalog, required_keys, allowed_keys, path, "catalog", errors)
     if catalog is None:
         return
@@ -204,6 +207,8 @@ def _validate_catalog_sidecar(path: Path, errors: list[ValidationError]) -> None
         errors.append(ValidationError(path, "catalog status is invalid"))
     if catalog.get("category") not in VALID_CATEGORIES:
         errors.append(ValidationError(path, "catalog category is not in catalog/taxonomy.json"))
+    elif path.parent.parent.name != catalog["category"]:
+        errors.append(ValidationError(path, "catalog category must match the skill category directory"))
     facets = catalog.get("facets")
     if not isinstance(facets, list) or not facets or not all(_is_nonempty_string(item) for item in facets):
         errors.append(ValidationError(path, "catalog facets must be a non-empty string array"))
@@ -236,6 +241,144 @@ def _validate_catalog_sidecar(path: Path, errors: list[ValidationError]) -> None
             _is_nonempty_string(item) for item in requirements["tools"]
         ):
             errors.append(ValidationError(path, "catalog requirements tools must be a string array"))
+
+    api_contract_discovery = catalog.get("api_contract_discovery")
+    if requirements is not None and requirements.get("network_access") is True and api_contract_discovery is None:
+        errors.append(ValidationError(path, "networked catalog requires api_contract_discovery"))
+    if api_contract_discovery is not None:
+        if not isinstance(api_contract_discovery, dict):
+            errors.append(ValidationError(path, "catalog api_contract_discovery must be an object"))
+        elif api_contract_discovery.get("result") == "openapi":
+            api_contract_discovery = _validate_required_keys(
+                api_contract_discovery,
+                {"result", "source_url", "target_path"},
+                {"result", "source_url", "target_path", "swagger_ui_path"},
+                path,
+                "catalog api_contract_discovery",
+                errors
+            )
+            if api_contract_discovery is not None:
+                if not _is_https_url(api_contract_discovery.get("source_url")):
+                    errors.append(ValidationError(path, "catalog api_contract_discovery source_url must be an HTTPS URL"))
+                if not isinstance(api_contract_discovery.get("target_path"), str) or not api_contract_discovery["target_path"].startswith("/"):
+                    errors.append(ValidationError(path, "catalog api_contract_discovery target_path must be an absolute target path"))
+                swagger_ui_path = api_contract_discovery.get("swagger_ui_path")
+                if swagger_ui_path is not None and (
+                    not isinstance(swagger_ui_path, str) or not swagger_ui_path.startswith("/")
+                ):
+                    errors.append(ValidationError(path, "catalog api_contract_discovery swagger_ui_path must be an absolute target path"))
+        elif api_contract_discovery.get("result") == "not-published":
+            api_contract_discovery = _validate_required_keys(
+                api_contract_discovery,
+                {"result", "absence_evidence_url"},
+                {"result", "absence_evidence_url"},
+                path,
+                "catalog api_contract_discovery",
+                errors
+            )
+            if api_contract_discovery is not None and not _is_https_url(api_contract_discovery.get("absence_evidence_url")):
+                errors.append(ValidationError(path, "catalog api_contract_discovery absence_evidence_url must be an HTTPS URL"))
+        else:
+            errors.append(ValidationError(path, "catalog api_contract_discovery result must be 'openapi' or 'not-published'"))
+
+    upstream_compatibility = catalog.get("upstream_compatibility")
+    is_published = catalog.get("status") == "published"
+    if is_published and requirements is not None and requirements.get("network_access") is True and upstream_compatibility is None:
+        errors.append(ValidationError(path, "catalog requires upstream_compatibility when network_access is true"))
+    if upstream_compatibility is not None:
+        upstream_compatibility = _validate_required_keys(
+            upstream_compatibility,
+            {"service", "api_version", "supported_service_versions", "capability_discovery", "evidence"},
+            {"service", "api_version", "supported_service_versions", "capability_discovery", "evidence"},
+            path,
+            "catalog upstream_compatibility",
+            errors
+        )
+        if upstream_compatibility is not None:
+            for field in ("service", "api_version"):
+                if not _is_nonempty_string(upstream_compatibility.get(field)):
+                    errors.append(ValidationError(path, f"catalog upstream_compatibility {field} must be a non-empty string"))
+            supported_versions = upstream_compatibility.get("supported_service_versions")
+            if not isinstance(supported_versions, list) or not supported_versions or not all(
+                _is_nonempty_string(version) for version in supported_versions
+            ):
+                errors.append(ValidationError(path, "catalog upstream_compatibility supported_service_versions must be a non-empty string array"))
+            elif len(supported_versions) != len(set(supported_versions)):
+                errors.append(ValidationError(path, "catalog upstream_compatibility supported_service_versions must be unique"))
+            capability_discovery = _validate_required_keys(
+                upstream_compatibility.get("capability_discovery"),
+                {"strategy", "reference"},
+                {"strategy", "reference"},
+                path,
+                "catalog upstream_compatibility capability_discovery",
+                errors
+            )
+            if capability_discovery is not None:
+                if capability_discovery.get("strategy") not in {"runtime-probe", "published-openapi", "documentation", "none"}:
+                    errors.append(ValidationError(path, "catalog upstream_compatibility capability_discovery strategy is invalid"))
+                if not _is_nonempty_string(capability_discovery.get("reference")):
+                    errors.append(ValidationError(path, "catalog upstream_compatibility capability_discovery reference must be a non-empty string"))
+            evidence = upstream_compatibility.get("evidence")
+            if not isinstance(evidence, list):
+                errors.append(ValidationError(path, "catalog upstream_compatibility evidence must be an array"))
+            elif is_published and not evidence:
+                errors.append(ValidationError(path, "published catalog upstream_compatibility evidence must be a non-empty array"))
+            else:
+                has_passing_evidence = False
+                for index, item in enumerate(evidence):
+                    item = _validate_required_keys(
+                        item,
+                        {"service_version", "api_version", "verified_at", "result"},
+                        {"service_version", "api_version", "verified_at", "result"},
+                        path,
+                        f"catalog upstream_compatibility evidence[{index}]",
+                        errors
+                    )
+                    if item is None:
+                        continue
+                    if not _is_nonempty_string(item.get("service_version")) or not _is_nonempty_string(item.get("api_version")):
+                        errors.append(ValidationError(path, f"catalog upstream_compatibility evidence[{index}] versions must be non-empty strings"))
+                    if not _is_iso_date(item.get("verified_at")):
+                        errors.append(ValidationError(path, f"catalog upstream_compatibility evidence[{index}] verified_at must be an ISO date"))
+                    if item.get("result") not in {"pass", "partial", "fail"}:
+                        errors.append(ValidationError(path, f"catalog upstream_compatibility evidence[{index}] result is invalid"))
+                    if item.get("result") == "pass":
+                        has_passing_evidence = True
+                if is_published and not has_passing_evidence:
+                    errors.append(ValidationError(path, "catalog upstream_compatibility requires at least one passing evidence result"))
+        skill_path = path.parent / "SKILL.md"
+        if skill_path.is_file() and not re.search(r"^## Upstream compatibility\s*$", skill_path.read_text(encoding="utf-8"), re.MULTILINE):
+            errors.append(ValidationError(skill_path, "networked skill must contain an '## Upstream compatibility' section"))
+
+    authentication = catalog.get("authentication")
+    credentials = requirements.get("credentials") if requirements is not None else None
+    if is_published and isinstance(credentials, list) and credentials and authentication is None:
+        errors.append(ValidationError(path, "catalog requires authentication metadata when credentials are declared"))
+    if authentication is not None:
+        authentication = _validate_required_keys(
+            authentication,
+            {"methods", "target_binding", "prompting", "failure_behavior"},
+            {"methods", "target_binding", "prompting", "failure_behavior"},
+            path,
+            "catalog authentication",
+            errors
+        )
+        if authentication is not None:
+            methods = authentication.get("methods")
+            if not isinstance(methods, list) or not methods or not all(_is_nonempty_string(method) for method in methods):
+                errors.append(ValidationError(path, "catalog authentication methods must be a non-empty string array"))
+            elif len(methods) != len(set(methods)):
+                errors.append(ValidationError(path, "catalog authentication methods must be unique"))
+            if authentication.get("target_binding") != "exact-target":
+                errors.append(ValidationError(path, "catalog authentication target_binding must be 'exact-target'"))
+            if authentication.get("prompting") != "when-missing-or-invalid":
+                errors.append(ValidationError(path, "catalog authentication prompting must be 'when-missing-or-invalid'"))
+            if authentication.get("failure_behavior") != "stop":
+                errors.append(ValidationError(path, "catalog authentication failure_behavior must be 'stop'"))
+    if isinstance(credentials, list) and credentials:
+        skill_path = path.parent / "SKILL.md"
+        if skill_path.is_file() and not re.search(r"^## Authentication\s*$", skill_path.read_text(encoding="utf-8"), re.MULTILINE):
+            errors.append(ValidationError(skill_path, "authenticated skill must contain an '## Authentication' section"))
 
     compatibility = catalog.get("compatibility")
     if not isinstance(compatibility, list):
@@ -384,8 +527,115 @@ def _validate_taxonomy(path: Path, errors: list[ValidationError]) -> None:
         errors.append(ValidationError(path, "taxonomy must define capability, execution, and side_effect facets"))
 
 
+def _validate_upstream_catalog(path: Path, errors: list[ValidationError]) -> None:
+    catalog = _read_json(path, errors)
+    if catalog is None:
+        return
+    required_keys = {"schema_version", "id", "version", "status", "category", "facets", "risk", "description", "source", "files", "compatibility"}
+    catalog = _validate_required_keys(catalog, required_keys, required_keys, path, "upstream catalog", errors)
+    if catalog is None:
+        return
+    if catalog.get("schema_version") != "1.0":
+        errors.append(ValidationError(path, "upstream catalog schema_version must be '1.0'"))
+    identifier = catalog.get("id")
+    if not isinstance(identifier, str) or not SKILL_IDENTIFIER_PATTERN.fullmatch(identifier):
+        errors.append(ValidationError(path, "upstream catalog id must be lowercase kebab-case"))
+    elif path.parent.name != identifier:
+        errors.append(ValidationError(path, "upstream catalog id must match its directory name"))
+    if not isinstance(catalog.get("version"), str) or not SEMVER_PATTERN.fullmatch(catalog["version"]):
+        errors.append(ValidationError(path, "upstream catalog version must be semantic versioning"))
+    if catalog.get("status") not in {"draft", "published", "deprecated"}:
+        errors.append(ValidationError(path, "upstream catalog status is invalid"))
+    if catalog.get("category") not in VALID_CATEGORIES:
+        errors.append(ValidationError(path, "upstream catalog category is invalid"))
+    facets = catalog.get("facets")
+    if not isinstance(facets, list) or not facets or not all(_is_nonempty_string(facet) for facet in facets) or len(facets) != len(set(facets)):
+        errors.append(ValidationError(path, "upstream catalog facets must be a unique non-empty string array"))
+    if catalog.get("risk") not in VALID_RISKS:
+        errors.append(ValidationError(path, "upstream catalog risk is invalid"))
+    if not _is_nonempty_string(catalog.get("description")):
+        errors.append(ValidationError(path, "upstream catalog description must be non-empty"))
+    if not isinstance(catalog.get("compatibility"), list):
+        errors.append(ValidationError(path, "upstream catalog compatibility must be an array"))
+
+    source = _validate_required_keys(catalog.get("source"), {"repository", "commit", "license", "reviewed_at"},
+        {"repository", "commit", "license", "reviewed_at"}, path, "upstream catalog source", errors)
+    if source is not None:
+        if not isinstance(source.get("repository"), str) or not UPSTREAM_REPOSITORY_PATTERN.fullmatch(source["repository"]):
+            errors.append(ValidationError(path, "upstream catalog source repository must be owner/repository"))
+        if not isinstance(source.get("commit"), str) or not COMMIT_SHA_PATTERN.fullmatch(source["commit"]):
+            errors.append(ValidationError(path, "upstream catalog source commit must be a full lowercase SHA"))
+        if not _is_nonempty_string(source.get("license")):
+            errors.append(ValidationError(path, "upstream catalog source license must be non-empty"))
+        if not _is_iso_date(source.get("reviewed_at")):
+            errors.append(ValidationError(path, "upstream catalog source reviewed_at must be an ISO date"))
+
+    files = catalog.get("files")
+    if not isinstance(files, list) or not files:
+        errors.append(ValidationError(path, "upstream catalog files must be a non-empty array"))
+    else:
+        declared_paths: set[str] = set()
+        for index, file in enumerate(files):
+            context = f"upstream catalog files[{index}]"
+            file = _validate_required_keys(file, {"path", "source_path", "sha256", "size_bytes", "content_type"},
+                {"path", "source_path", "sha256", "size_bytes", "content_type"}, path, context, errors)
+            if file is None:
+                continue
+            for key in ("path", "source_path"):
+                value = file.get(key)
+                if not isinstance(value, str) or not value or value.startswith("/") or ".." in Path(value).parts:
+                    errors.append(ValidationError(path, f"{context} {key} must be a safe relative path"))
+            file_path = file.get("path")
+            if isinstance(file_path, str):
+                if file_path in declared_paths:
+                    errors.append(ValidationError(path, f"{context} path must be unique"))
+                declared_paths.add(file_path)
+            if not isinstance(file.get("sha256"), str) or not SHA256_PATTERN.fullmatch(file["sha256"]):
+                errors.append(ValidationError(path, f"{context} sha256 must be lowercase SHA-256"))
+            if not isinstance(file.get("size_bytes"), int) or file["size_bytes"] < 0:
+                errors.append(ValidationError(path, f"{context} size_bytes must be a non-negative integer"))
+            if not _is_nonempty_string(file.get("content_type")):
+                errors.append(ValidationError(path, f"{context} content_type must be non-empty"))
+        if "SKILL.md" not in declared_paths:
+            errors.append(ValidationError(path, "upstream catalog files must declare SKILL.md"))
+
+    overlay_path = path.parent / "overlay.json"
+    if not overlay_path.is_file():
+        return
+    overlay = _read_json(overlay_path, errors)
+    if overlay is None:
+        return
+    overlay = _validate_required_keys(overlay, {"schema_version", "upstream_id", "operations"},
+        {"schema_version", "upstream_id", "operations"}, overlay_path, "upstream overlay", errors)
+    if overlay is None:
+        return
+    if overlay.get("schema_version") != "1.0" or overlay.get("upstream_id") != catalog.get("id"):
+        errors.append(ValidationError(overlay_path, "upstream overlay identity must match its catalog"))
+    operations = overlay.get("operations")
+    if not isinstance(operations, list):
+        errors.append(ValidationError(overlay_path, "upstream overlay operations must be an array"))
+        return
+    for index, operation in enumerate(operations):
+        context = f"upstream overlay operations[{index}]"
+        if not isinstance(operation, dict) or operation.get("operation") not in {"append", "replace", "remove"}:
+            errors.append(ValidationError(overlay_path, f"{context} operation is invalid"))
+            continue
+        required = {"operation", "section"} if operation["operation"] == "remove" else {"operation", "section", "content"}
+        validated_operation = _validate_required_keys(operation, required, required, overlay_path, context, errors)
+        if validated_operation is None:
+            continue
+        section = validated_operation.get("section")
+        if not isinstance(section, str) or not re.fullmatch(r"#{1,6}\s+\S.*", section):
+            errors.append(ValidationError(overlay_path, f"{context} section must be a Markdown heading"))
+        content = validated_operation.get("content")
+        if operation["operation"] != "remove" and (
+            not _is_nonempty_string(content) or len(content.encode("utf-8")) > 32 * 1024
+        ):
+            errors.append(ValidationError(overlay_path, f"{context} content must be non-empty and at most 32 KiB"))
+
+
 def _validate_schema_documents(root: Path, errors: list[ValidationError]) -> None:
-    for schema_name in ("catalog.schema.json", "evaluation.schema.json"):
+    for schema_name in ("catalog.schema.json", "evaluation.schema.json", "upstream-skill.schema.json", "upstream-overlay.schema.json"):
         path = root / "schemas" / schema_name
         schema = _read_json(path, errors)
         if not isinstance(schema, dict):
@@ -483,6 +733,35 @@ def _validate_workflows(root: Path, errors: list[ValidationError]) -> None:
                 errors.append(ValidationError(path, "validation workflow must run for pull requests and pushes"))
 
 
+def _validate_skill_directory_layout(root: Path, errors: list[ValidationError]) -> None:
+    skills_directory = root / "skills"
+    if not skills_directory.is_dir():
+        return
+    for category_directory in sorted(skills_directory.iterdir()):
+        if category_directory.name == "README.md":
+            continue
+        if not category_directory.is_dir():
+            errors.append(ValidationError(category_directory, "skills directory may contain only category directories and README.md"))
+            continue
+        if category_directory.name not in VALID_CATEGORIES:
+            errors.append(ValidationError(category_directory, "skill category directory is not in catalog/taxonomy.json"))
+            continue
+        for skill_directory in sorted(category_directory.iterdir()):
+            if skill_directory.name == "README.md":
+                continue
+            if not skill_directory.is_dir():
+                errors.append(ValidationError(skill_directory, "category directory may contain only skill directories and README.md"))
+                continue
+            if not SKILL_IDENTIFIER_PATTERN.fullmatch(skill_directory.name):
+                errors.append(ValidationError(skill_directory, "skill directory name must be lowercase kebab-case"))
+
+    for skill_path in sorted(skills_directory.glob("*/SKILL.md")):
+        errors.append(ValidationError(skill_path, "skill must be located at skills/<category>/<skill-id>/SKILL.md"))
+    for catalog_path in sorted(skills_directory.rglob("catalog.json")):
+        if len(catalog_path.relative_to(skills_directory).parts) != 3:
+            errors.append(ValidationError(catalog_path, "catalog sidecar must be located at skills/<category>/<skill-id>/catalog.json"))
+
+
 def validate_repository(root: Path) -> list[ValidationError]:
     root = root.resolve()
     errors: list[ValidationError] = []
@@ -493,6 +772,8 @@ def validate_repository(root: Path) -> list[ValidationError]:
         root / "CODE_OF_CONDUCT.md",
         root / "schemas" / "catalog.schema.json",
         root / "schemas" / "evaluation.schema.json",
+        root / "schemas" / "upstream-skill.schema.json",
+        root / "schemas" / "upstream-overlay.schema.json",
         root / "catalog" / "taxonomy.json",
         root / "catalog" / "planned-skills.json",
         root / "catalog" / "index.json",
@@ -507,12 +788,15 @@ def validate_repository(root: Path) -> list[ValidationError]:
     _validate_schema_documents(root, errors)
     _validate_taxonomy(root / "catalog" / "taxonomy.json", errors)
     _validate_planned_skills(root / "catalog" / "planned-skills.json", errors)
-    for skill_path in sorted((root / "skills").glob("*/SKILL.md")) if (root / "skills").is_dir() else []:
+    _validate_skill_directory_layout(root, errors)
+    for skill_path in sorted((root / "skills").glob("*/*/SKILL.md")) if (root / "skills").is_dir() else []:
         _validate_skill(skill_path, errors)
-    for catalog_path in sorted((root / "skills").glob("*/catalog.json")) if (root / "skills").is_dir() else []:
+    for catalog_path in sorted((root / "skills").glob("*/*/catalog.json")) if (root / "skills").is_dir() else []:
         _validate_catalog_sidecar(catalog_path, errors)
-    for evaluation_path in sorted((root / "skills").glob("*/evals/*.json")) if (root / "skills").is_dir() else []:
+    for evaluation_path in sorted((root / "skills").glob("*/*/evals/*.json")) if (root / "skills").is_dir() else []:
         _validate_evaluation_definition(evaluation_path, errors)
+    for upstream_catalog_path in sorted((root / "upstreams").glob("*/catalog.json")) if (root / "upstreams").is_dir() else []:
+        _validate_upstream_catalog(upstream_catalog_path, errors)
     _validate_links(root, errors)
     _validate_secrets(root, errors)
     _validate_scripts(root, errors)

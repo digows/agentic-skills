@@ -1,6 +1,9 @@
 export const MAX_FILE_BYTES = 96 * 1024;
 const IDENTIFIER_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const COMMIT_PATTERN = /^[0-9a-f]{40}$/;
+const REPOSITORY_PATTERN = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+const SKILL_DIRECTORY_PATTERN = /^skills\/([a-z0-9]+(?:-[a-z0-9]+)*)\/([a-z0-9]+(?:-[a-z0-9]+)*)$/;
+const UPSTREAM_DIRECTORY_PATTERN = /^upstreams\/([a-z0-9]+(?:-[a-z0-9]+)*)$/;
 
 export interface SkillFile
 {
@@ -8,17 +11,38 @@ export interface SkillFile
   path: string;
   sha256: string;
   size_bytes: number;
+  source_path?: string;
 }
+
+export interface OverlayOperation
+{
+  operation: "append" | "replace" | "remove";
+  section: string;
+  content?: string;
+}
+
+export type SkillOrigin =
+  | { kind: "local"; }
+  | {
+    kind: "upstream";
+    repository: string;
+    commit: string;
+    license: string;
+    reviewed_at: string;
+    overlay: OverlayOperation[];
+  };
 
 export interface SkillSummary
 {
   category: string;
   compatibility: Array<Record<string, unknown>>;
   description: string;
+  directory: string;
   facets: string[];
   files: SkillFile[];
   id: string;
   name: string;
+  origin: SkillOrigin;
   risk: string;
   version: string;
 }
@@ -68,7 +92,7 @@ export class GitHubCatalogSource
     try
     {
       const sourceCommit = await this.fetchCommit();
-      const indexResponse = await this.fetchImplementation(this.rawUrl(sourceCommit, "catalog/index.json"), {
+      const indexResponse = await this.fetchImplementation(this.rawUrl(this.repository, sourceCommit, "catalog/index.json"), {
         headers: { "User-Agent": "agentic-skills-mcp/0.1.0" },
         cf: { cacheEverything: true, cacheTtl: 300 }
       } as RequestInit);
@@ -103,7 +127,14 @@ export class GitHubCatalogSource
     {
       throw new CatalogError("Requested file exceeds the maximum allowed size.");
     }
-    const response = await this.fetchImplementation(this.rawUrl(catalog.sourceCommit, `skills/${skill.id}/${file.path}`), {
+    const source = skill.origin.kind === "local"
+      ? { repository: this.repository, commit: catalog.sourceCommit, path: `${skill.directory}/${file.path}`, overlay: [] as OverlayOperation[] }
+      : { repository: skill.origin.repository, commit: skill.origin.commit, path: file.source_path ?? "", overlay: file.path === "SKILL.md" ? skill.origin.overlay : [] };
+    if (!source.path)
+    {
+      throw new CatalogError("Upstream skill file is missing its declared source path.");
+    }
+    const response = await this.fetchImplementation(this.rawUrl(source.repository, source.commit, source.path), {
       headers: { "User-Agent": "agentic-skills-mcp/0.1.0" },
       cf: { cacheEverything: true, cacheTtl: 3600 }
     } as RequestInit);
@@ -111,14 +142,19 @@ export class GitHubCatalogSource
     {
       throw new CatalogError(`Skill file request failed with HTTP ${response.status}`);
     }
-    const content = await response.text();
-    if (new TextEncoder().encode(content).byteLength > MAX_FILE_BYTES)
+    const upstreamContent = await response.text();
+    if (new TextEncoder().encode(upstreamContent).byteLength > MAX_FILE_BYTES)
     {
       throw new CatalogError("Downloaded skill file exceeds the maximum allowed size.");
     }
-    if (await sha256(content) !== file.sha256)
+    if (await sha256(upstreamContent) !== file.sha256)
     {
       throw new CatalogError("Downloaded skill file digest does not match the published manifest.");
+    }
+    const content = applyOverlay(upstreamContent, source.overlay);
+    if (new TextEncoder().encode(content).byteLength > MAX_FILE_BYTES)
+    {
+      throw new CatalogError("Resolved skill file exceeds the maximum allowed size.");
     }
     return content;
   }
@@ -145,9 +181,9 @@ export class GitHubCatalogSource
     return sourceCommit;
   }
 
-  private rawUrl(sourceCommit: string, path: string): string
+  private rawUrl(repository: string, sourceCommit: string, path: string): string
   {
-    return `https://raw.githubusercontent.com/${this.repository}/${sourceCommit}/${path}`;
+    return `https://raw.githubusercontent.com/${repository}/${sourceCommit}/${path}`;
   }
 }
 
@@ -241,6 +277,8 @@ function isValidSkill(value: unknown): value is SkillSummary
     return false;
   }
   const skill = value as Partial<SkillSummary>;
+  const localDirectoryMatch = typeof skill.directory === "string" ? SKILL_DIRECTORY_PATTERN.exec(skill.directory) : undefined;
+  const upstreamDirectoryMatch = typeof skill.directory === "string" ? UPSTREAM_DIRECTORY_PATTERN.exec(skill.directory) : undefined;
   return typeof skill.id === "string" && IDENTIFIER_PATTERN.test(skill.id)
     && typeof skill.name === "string" && typeof skill.description === "string"
     && typeof skill.version === "string" && typeof skill.category === "string"
@@ -249,5 +287,101 @@ function isValidSkill(value: unknown): value is SkillSummary
     && skill.files.every((file) => typeof file.path === "string" && !file.path.includes("..")
       && typeof file.sha256 === "string" && /^[0-9a-f]{64}$/.test(file.sha256)
       && typeof file.size_bytes === "number" && file.size_bytes >= 0
-      && typeof file.content_type === "string");
+      && typeof file.content_type === "string")
+    && isValidOrigin(skill.origin, skill.id, skill.category, localDirectoryMatch, upstreamDirectoryMatch, skill.files);
+}
+
+function isValidOrigin(
+  origin: unknown,
+  identifier: string,
+  category: string,
+  localDirectoryMatch: RegExpExecArray | null | undefined,
+  upstreamDirectoryMatch: RegExpExecArray | null | undefined,
+  files: SkillFile[]
+): origin is SkillOrigin
+{
+  if (typeof origin !== "object" || origin === null)
+  {
+    return false;
+  }
+  const candidate = origin as {
+    kind?: unknown;
+    repository?: unknown;
+    commit?: unknown;
+    license?: unknown;
+    reviewed_at?: unknown;
+    overlay?: unknown;
+  };
+  if (candidate.kind === "local")
+  {
+    return localDirectoryMatch !== undefined && localDirectoryMatch !== null
+      && localDirectoryMatch[1] === category
+      && localDirectoryMatch[2] === identifier
+      && Object.keys(candidate).length === 1
+      && files.every((file) => file.source_path === undefined);
+  }
+  if (candidate.kind !== "upstream")
+  {
+    return false;
+  }
+  return upstreamDirectoryMatch !== undefined && upstreamDirectoryMatch !== null
+    && upstreamDirectoryMatch[1] === identifier
+    && typeof candidate.repository === "string" && REPOSITORY_PATTERN.test(candidate.repository)
+    && typeof candidate.commit === "string" && COMMIT_PATTERN.test(candidate.commit)
+    && typeof candidate.license === "string" && candidate.license.length > 0
+    && typeof candidate.reviewed_at === "string" && /^\d{4}-\d{2}-\d{2}$/.test(candidate.reviewed_at)
+    && Array.isArray(candidate.overlay) && candidate.overlay.every(isValidOverlayOperation)
+    && files.every((file) => typeof file.source_path === "string" && !file.source_path.startsWith("/") && !file.source_path.split("/").includes(".."));
+}
+
+function isValidOverlayOperation(value: unknown): value is OverlayOperation
+{
+  if (typeof value !== "object" || value === null)
+  {
+    return false;
+  }
+  const operation = value as Partial<OverlayOperation>;
+  if (typeof operation.section !== "string" || !/^#{1,6}\s+\S.*$/.test(operation.section))
+  {
+    return false;
+  }
+  if (operation.operation === "remove")
+  {
+    return Object.keys(operation).length === 2;
+  }
+  return (operation.operation === "append" || operation.operation === "replace")
+    && typeof operation.content === "string" && operation.content.trim().length > 0
+    && Object.keys(operation).length === 3;
+}
+
+export function applyOverlay(content: string, operations: OverlayOperation[]): string
+{
+  return operations.reduce((resolvedContent, operation) => applyOverlayOperation(resolvedContent, operation), content);
+}
+
+function applyOverlayOperation(content: string, operation: OverlayOperation): string
+{
+  const headingPattern = /^#{1,6}\s+.*$/gm;
+  const headings = Array.from(content.matchAll(headingPattern));
+  const targetHeadings = headings.filter((heading) => heading[0].trimEnd() === operation.section);
+  if (targetHeadings.length !== 1)
+  {
+    throw new CatalogError(`Overlay section '${operation.section}' was not found exactly once in the upstream skill.`);
+  }
+  const target = targetHeadings[0];
+  const targetStart = target.index ?? 0;
+  const targetEnd = targetStart + target[0].length;
+  const targetLevel = target[0].match(/^#+/)?.[0].length ?? 0;
+  const nextHeading = headings.find((heading) => (heading.index ?? 0) > targetStart && (heading[0].match(/^#+/)?.[0].length ?? 0) <= targetLevel);
+  const sectionEnd = nextHeading?.index ?? content.length;
+  if (operation.operation === "remove")
+  {
+    return `${content.slice(0, targetStart)}${content.slice(sectionEnd)}`.replace(/\n{3,}/g, "\n\n");
+  }
+  const normalizedContent = operation.content?.trim() ?? "";
+  if (operation.operation === "replace")
+  {
+    return `${content.slice(0, targetEnd)}\n\n${normalizedContent}\n\n${content.slice(sectionEnd).replace(/^\n+/, "")}`;
+  }
+  return `${content.slice(0, sectionEnd).replace(/\s*$/, "")}\n\n${normalizedContent}\n\n${content.slice(sectionEnd).replace(/^\n+/, "")}`;
 }

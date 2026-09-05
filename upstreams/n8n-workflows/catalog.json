@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0",
+  "id": "n8n-workflows",
+  "version": "1.0.0",
+  "status": "published",
+  "category": "infrastructure-and-operations",
+  "facets": ["automation", "configuration", "integration", "remote-api", "external-write"],
+  "risk": "high",
+  "description": "Design, validate, test, publish, and hand off n8n workflows using the official lifecycle skill, with a contract-first Public API fallback.",
+  "source": {
+    "repository": "n8n-io/skills",
+    "commit": "180b8415e3b73f78828cfa01e908e67f89f2a139",
+    "license": "Apache-2.0",
+    "reviewed_at": "2026-09-05"
+  },
+  "files": [
+    {
+      "path": "SKILL.md",
+      "source_path": "skills/n8n-workflow-lifecycle-official/SKILL.md",
+      "sha256": "fb478e4c54655f6171e7bf699b720e7bdc993f4a76d94c5b562bb8a9cd358fcb",
+      "size_bytes": 16596,
+      "content_type": "text/markdown"
+    },
+    {
+      "path": "references/TESTING.md",
+      "source_path": "skills/n8n-workflow-lifecycle-official/references/TESTING.md",
+      "sha256": "d50577b3bf7e0d08d9bfd17022c33cd535fff38f646ee5274f26c7eb7b742ac6",
+      "size_bytes": 8179,
+      "content_type": "text/markdown"
+    },
+    {
+      "path": "references/VALIDATION_CHECKLIST.md",
+      "source_path": "skills/n8n-workflow-lifecycle-official/references/VALIDATION_CHECKLIST.md",
+      "sha256": "2752b1a2a1e8a555345a4e020a16ef294a2d2ea7ae9299f61d220ac2e3f00044",
+      "size_bytes": 9948,
+      "content_type": "text/markdown"
+    },
+    {
+      "path": "references/NAMING_CONVENTIONS.md",
+      "source_path": "skills/n8n-workflow-lifecycle-official/references/NAMING_CONVENTIONS.md",
+      "sha256": "68809db8fe57c8a93dd90e8aa70d2770ae470e4e59ac3afe1f3ad3fd6c569574",
+      "size_bytes": 5709,
+      "content_type": "text/markdown"
+    },
+    {
+      "path": "references/FOLDER_LIMITATIONS.md",
+      "source_path": "skills/n8n-workflow-lifecycle-official/references/FOLDER_LIMITATIONS.md",
+      "sha256": "dc3dd131f75be47c68e7b3119eb161a93bee3f5ff7609b99c33146297d0678a9",
+      "size_bytes": 1716,
+      "content_type": "text/markdown"
+    },
+    {
+      "path": "references/MCP_ACCESS_PER_WORKFLOW.md",
+      "source_path": "skills/n8n-workflow-lifecycle-official/references/MCP_ACCESS_PER_WORKFLOW.md",
+      "sha256": "a3b465cdb2e32cefb90212333f1c7444aff9760b8b4abbd895e21bea33bad0c3",
+      "size_bytes": 1641,
+      "content_type": "text/markdown"
+    },
+    {
+      "path": "references/REVIEW_CHECKLIST.md",
+      "source_path": "skills/n8n-workflow-lifecycle-official/references/REVIEW_CHECKLIST.md",
+      "sha256": "a75598617a602ba6d18d7f7fd96c2069234fcd9463550141c45c9e1bede29334",
+      "size_bytes": 35574,
+      "content_type": "text/markdown"
+    }
+  ],
+  "compatibility": []
+}

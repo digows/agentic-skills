@@ -32,22 +32,25 @@ The project exists to make specialized operational knowledge usable by both smal
 
 ## Status
 
-The repository is in its foundation phase. It contains no published skills yet. The first planned domains are n8n, GitLab, Home Assistant, MikroTik, UniFi, and RITA; they are tracked in [`catalog/planned-skills.json`](catalog/planned-skills.json), not represented by empty or activatable skills.
+The catalogue currently publishes [`n8n-workflows`](upstreams/n8n-workflows): the official n8n workflow-lifecycle skill, pinned to an immutable upstream commit and supplemented with a small contract-first Public API overlay. GitLab, Home Assistant, MikroTik, UniFi, and RITA remain tracked in [`catalog/planned-skills.json`](catalog/planned-skills.json), not represented by empty or activatable skills.
 
 ## Repository layout
 
 ```text
-skills/<skill-id>/
+skills/<category>/<skill-id>/
   SKILL.md                 # Portable Agent Skills entrypoint
   catalog.json             # Repository catalogue sidecar
   evals/definition.json    # Reproducible evaluation contract
   adapters/<provider>/     # Optional, non-canonical provider packaging
+upstreams/<skill-id>/      # Pinned authoritative skill and optional local overlay
 schemas/                   # JSON Schema contracts
 catalog/                   # Taxonomy and planned-skill registry
 tooling/                   # Dependency-free validation and tests
 ```
 
-Skills are deliberately flat under `skills/`. Categories are catalogue metadata, not directories, because discovery behavior is not consistently recursive across agent harnesses.
+Skills are grouped by their primary category for human navigation. The catalogue index and MCP server provide recursive discovery for agents, so category directories do not depend on a harness's filesystem-discovery behavior. A skill's directory category must match its `catalog.json` `category`.
+
+The catalogue can also list authoritative upstream skills without forking them. Those entries are pinned to an immutable upstream commit and file digest; a local overlay may append, replace, or remove a named instruction section when a reviewed complement is necessary. See [`docs/catalog-contract.md`](docs/catalog-contract.md#federated-upstream-skills-and-overlays).
 
 ## Quality gate
 
@@ -68,11 +71,15 @@ MCP-compatible agents can discover and retrieve published skills through the pub
 
 The canonical `SKILL.md` contains only portable Agent Skills fields and instructions. `catalog.json` records requirements, risk, provenance, compatibility evidence, and evaluation references. Provider-specific material belongs under `adapters/`; it must not alter the portable skill contract.
 
+Skills that need credentials follow the portable [authentication contract](docs/authentication-contract.md): resolve an explicit target first, use only that target's local credential profile, reuse a valid credential without prompting, and stop rather than try another profile on authentication failure. The public MCP server never receives or manages those credentials.
+
+Skills that access network services also declare [upstream compatibility](docs/upstream-compatibility-contract.md): supported service/API versions, how capabilities are discovered on the selected target, and exact evaluated evidence. This is distinct from harness compatibility.
+
 See [`docs/catalog-contract.md`](docs/catalog-contract.md) before adding a skill and [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a pull request.
 
 ## Planned domains
 
-The first domains are intentionally planned, not prematurely published: n8n, GitLab, Home Assistant, MikroTik, UniFi, and RITA. Every future skill must include a concrete authority boundary, compatibility evidence, and an evaluation definition before it is considered published.
+The remaining domains are intentionally planned, not prematurely published: GitLab, Home Assistant, MikroTik, UniFi, and RITA. Every future skill must include a concrete authority boundary, compatibility evidence, and an evaluation definition before it is considered published.
 
 ## Contributing
 

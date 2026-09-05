@@ -2,16 +2,6 @@
   "schema_version": "1.0",
   "items": [
     {
-      "id": "n8n",
-      "title": "n8n Public API",
-      "status": "planned",
-      "category": "infrastructure-and-operations",
-      "facets": ["automation", "integration", "remote-api", "external-write"],
-      "risk": "high",
-      "upstream": "https://docs.n8n.io/api/",
-      "scope": "Safe operation through the documented n8n public API with explicit authority boundaries."
-    },
-    {
       "id": "gitlab",
       "title": "GitLab REST API",
       "status": "planned",

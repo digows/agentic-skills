@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/digows/agentic-skills/blob/main/schemas/upstream-overlay.schema.json",
+  "title": "Federated upstream skill overlay",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "upstream_id", "operations"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "upstream_id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "operations": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["operation", "section", "content"],
+            "properties": {
+              "operation": { "enum": ["append", "replace"] },
+              "section": { "type": "string", "pattern": "^#{1,6}\\s+\\S.*$" },
+              "content": { "type": "string", "minLength": 1, "maxLength": 32768 }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["operation", "section"],
+            "properties": {
+              "operation": { "const": "remove" },
+              "section": { "type": "string", "pattern": "^#{1,6}\\s+\\S.*$" }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
