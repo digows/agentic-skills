@@ -114,7 +114,7 @@
     "authentication": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["methods", "target_binding", "prompting", "failure_behavior"],
+      "required": ["methods", "target_binding", "prompting", "failure_behavior", "onboarding"],
       "properties": {
         "methods": {
           "type": "array",
@@ -124,7 +124,8 @@
         },
         "target_binding": { "const": "exact-target" },
         "prompting": { "const": "when-missing-or-invalid" },
-        "failure_behavior": { "const": "stop" }
+        "failure_behavior": { "const": "stop" },
+        "onboarding": { "const": "clipboard-when-available" }
       }
     },
     "compatibility": {

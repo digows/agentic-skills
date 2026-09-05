@@ -58,6 +58,7 @@ VALID_RISKS = {"low", "moderate", "high", "critical"}
 UPSTREAM_REPOSITORY_PATTERN = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 COMMIT_SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+AUTHENTICATION_KEYS = {"methods", "target_binding", "prompting", "failure_behavior", "onboarding"}
 
 
 @dataclass(frozen=True)
@@ -355,26 +356,7 @@ def _validate_catalog_sidecar(path: Path, errors: list[ValidationError]) -> None
     if is_published and isinstance(credentials, list) and credentials and authentication is None:
         errors.append(ValidationError(path, "catalog requires authentication metadata when credentials are declared"))
     if authentication is not None:
-        authentication = _validate_required_keys(
-            authentication,
-            {"methods", "target_binding", "prompting", "failure_behavior"},
-            {"methods", "target_binding", "prompting", "failure_behavior"},
-            path,
-            "catalog authentication",
-            errors
-        )
-        if authentication is not None:
-            methods = authentication.get("methods")
-            if not isinstance(methods, list) or not methods or not all(_is_nonempty_string(method) for method in methods):
-                errors.append(ValidationError(path, "catalog authentication methods must be a non-empty string array"))
-            elif len(methods) != len(set(methods)):
-                errors.append(ValidationError(path, "catalog authentication methods must be unique"))
-            if authentication.get("target_binding") != "exact-target":
-                errors.append(ValidationError(path, "catalog authentication target_binding must be 'exact-target'"))
-            if authentication.get("prompting") != "when-missing-or-invalid":
-                errors.append(ValidationError(path, "catalog authentication prompting must be 'when-missing-or-invalid'"))
-            if authentication.get("failure_behavior") != "stop":
-                errors.append(ValidationError(path, "catalog authentication failure_behavior must be 'stop'"))
+        _validate_authentication(authentication, path, "catalog authentication", errors)
     if isinstance(credentials, list) and credentials:
         skill_path = path.parent / "SKILL.md"
         if skill_path.is_file() and not re.search(r"^## Authentication\s*$", skill_path.read_text(encoding="utf-8"), re.MULTILINE):
@@ -531,7 +513,7 @@ def _validate_upstream_catalog(path: Path, errors: list[ValidationError]) -> Non
     catalog = _read_json(path, errors)
     if catalog is None:
         return
-    required_keys = {"schema_version", "id", "version", "status", "category", "facets", "risk", "description", "source", "files", "compatibility"}
+    required_keys = {"schema_version", "id", "version", "status", "category", "facets", "risk", "description", "source", "files", "authentication", "compatibility"}
     catalog = _validate_required_keys(catalog, required_keys, required_keys, path, "upstream catalog", errors)
     if catalog is None:
         return
@@ -557,6 +539,9 @@ def _validate_upstream_catalog(path: Path, errors: list[ValidationError]) -> Non
         errors.append(ValidationError(path, "upstream catalog description must be non-empty"))
     if not isinstance(catalog.get("compatibility"), list):
         errors.append(ValidationError(path, "upstream catalog compatibility must be an array"))
+    authentication = catalog.get("authentication")
+    if authentication is not None:
+        _validate_authentication(authentication, path, "upstream catalog authentication", errors)
 
     source = _validate_required_keys(catalog.get("source"), {"repository", "commit", "license", "reviewed_at"},
         {"repository", "commit", "license", "reviewed_at"}, path, "upstream catalog source", errors)
@@ -632,6 +617,30 @@ def _validate_upstream_catalog(path: Path, errors: list[ValidationError]) -> Non
             not _is_nonempty_string(content) or len(content.encode("utf-8")) > 32 * 1024
         ):
             errors.append(ValidationError(overlay_path, f"{context} content must be non-empty and at most 32 KiB"))
+
+
+def _validate_authentication(
+    authentication: Any,
+    path: Path,
+    context: str,
+    errors: list[ValidationError]
+) -> None:
+    authentication = _validate_required_keys(authentication, AUTHENTICATION_KEYS, AUTHENTICATION_KEYS, path, context, errors)
+    if authentication is None:
+        return
+    methods = authentication.get("methods")
+    if not isinstance(methods, list) or not methods or not all(_is_nonempty_string(method) for method in methods):
+        errors.append(ValidationError(path, f"{context} methods must be a non-empty string array"))
+    elif len(methods) != len(set(methods)):
+        errors.append(ValidationError(path, f"{context} methods must be unique"))
+    if authentication.get("target_binding") != "exact-target":
+        errors.append(ValidationError(path, f"{context} target_binding must be 'exact-target'"))
+    if authentication.get("prompting") != "when-missing-or-invalid":
+        errors.append(ValidationError(path, f"{context} prompting must be 'when-missing-or-invalid'"))
+    if authentication.get("failure_behavior") != "stop":
+        errors.append(ValidationError(path, f"{context} failure_behavior must be 'stop'"))
+    if authentication.get("onboarding") != "clipboard-when-available":
+        errors.append(ValidationError(path, f"{context} onboarding must be 'clipboard-when-available'"))
 
 
 def _validate_schema_documents(root: Path, errors: list[ValidationError]) -> None:

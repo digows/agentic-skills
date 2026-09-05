@@ -71,7 +71,7 @@ MCP-compatible agents can discover and retrieve published skills through the pub
 
 The canonical `SKILL.md` contains only portable Agent Skills fields and instructions. `catalog.json` records requirements, risk, provenance, compatibility evidence, and evaluation references. Provider-specific material belongs under `adapters/`; it must not alter the portable skill contract.
 
-Skills that need credentials follow the portable [authentication contract](docs/authentication-contract.md): resolve an explicit target first, use only that target's local credential profile, reuse a valid credential without prompting, and stop rather than try another profile on authentication failure. The public MCP server never receives or manages those credentials.
+Skills that need credentials follow the portable [authentication contract](docs/authentication-contract.md): resolve an explicit target first, onboard a missing API key from the clipboard when the harness supports it, persist it only in that target's local profile, reuse a valid credential without prompting, and stop rather than try another profile on authentication failure. The public MCP server never receives or manages those credentials.
 
 Skills that access network services also declare [upstream compatibility](docs/upstream-compatibility-contract.md): supported service/API versions, how capabilities are discovered on the selected target, and exact evaluated evidence. This is distinct from harness compatibility.
 

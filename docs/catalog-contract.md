@@ -35,7 +35,7 @@ skills/<category>/<skill-id>/
 - requirements and compatibility evidence; and
 - evaluation definition and report references.
 
-When `requirements.credentials` is non-empty, `catalog.json` must also contain the portable `authentication` policy defined in [`authentication-contract.md`](authentication-contract.md), and `SKILL.md` must contain an `## Authentication` section. The policy records how an agent must resolve and recover authentication; it never contains a secret, host inventory, or runtime-specific secret path.
+When `requirements.credentials` is non-empty, `catalog.json` must also contain the portable `authentication` policy defined in [`authentication-contract.md`](authentication-contract.md), and `SKILL.md` must contain an `## Authentication` section. The policy records how an agent must resolve and recover authentication, including the clipboard-first onboarding UX; it never contains a secret, host inventory, or runtime-specific secret path.
 
 When `requirements.network_access` is `true`, `catalog.json` must also contain `upstream_compatibility` and `SKILL.md` must contain an `## Upstream compatibility` section. See [`upstream-compatibility-contract.md`](upstream-compatibility-contract.md). This is separate from `compatibility`: the former records target-service/API evidence, while the latter records agent-harness evidence.
 
@@ -52,6 +52,8 @@ Use an upstream entry when its maintainer is the authority and the skill already
 An overlay is for explicit, reviewed supplementation. It must not silently change provenance, claim upstream behavior that was not reviewed, execute upstream scripts or hooks, or grant/deny harness tools and MCP servers. Harness permissions remain outside the catalogue.
 
 The MCP returns the resolved content and retains upstream provenance in discovery metadata. It downloads only manifest-declared files from the declared GitHub repository at the declared commit, verifies the upstream file SHA-256, and then applies the overlay in memory. It never follows a mutable branch or an agent-supplied URL.
+
+Every federated upstream entry declares `authentication`: either `null` when the referenced skill does not need access, or the same portable authentication policy required by local skills. When authentication is needed, an overlay must make that policy operational in the resolved skill without introducing provider-specific onboarding.
 
 ## Evaluations
 

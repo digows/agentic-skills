@@ -56,6 +56,7 @@ class BuildSkillIndexTests(unittest.TestCase):
   "description": "Uses the official example skill.",
   "source": {"repository": "example/official-skills", "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "license": "Apache-2.0", "reviewed_at": "2026-09-05"},
   "files": [{"path": "SKILL.md", "source_path": "skills/example/SKILL.md", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "size_bytes": 123, "content_type": "text/markdown"}],
+  "authentication": null,
   "compatibility": []
 }""",
                 encoding="utf-8"
