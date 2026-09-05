@@ -16,12 +16,6 @@ class ValidateRepositoryTests(unittest.TestCase):
         errors = validator.validate_repository(repository_root)
         self.assertEqual([], errors, [error.render(repository_root) for error in errors])
 
-    def test_planned_registry_excludes_published_rita(self) -> None:
-        repository_root = Path(__file__).resolve().parents[2]
-        registry = validator._read_json(repository_root / "catalog" / "planned-skills.json", [])
-        self.assertIsNotNone(registry)
-        self.assertEqual({"n8n", "gitlab", "home-assistant", "mikrotik", "unifi"}, {item["id"] for item in registry["items"]})
-
     def test_frontmatter_accepts_portable_required_fields(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             path = Path(temporary_directory) / "SKILL.md"

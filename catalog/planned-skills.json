@@ -50,6 +50,16 @@
       "risk": "critical",
       "upstream": "https://developer.ui.com/",
       "scope": "UniFi Network inspection and bounded configuration through the documented API."
+    },
+    {
+      "id": "rita",
+      "title": "RITA Network Threat Analytics",
+      "status": "planned",
+      "category": "security-and-compliance",
+      "facets": ["analysis", "investigation", "local", "read-only"],
+      "risk": "high",
+      "upstream": "https://github.com/activecm/rita",
+      "scope": "Network threat analytics and investigation using RITA outputs without exposing sensitive telemetry."
     }
   ]
 }

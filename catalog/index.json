@@ -1,35 +1,4 @@
 {
   "schema_version": "1.0",
-  "skills": [
-    {
-      "category": "security-and-compliance",
-      "compatibility": [
-        {
-          "harness": "Kubernetes CronJob with RITA",
-          "result": "pass",
-          "verified_at": "2026-09-04",
-          "version": "5.1.2"
-        }
-      ],
-      "description": "Analyze Zeek metadata with RITA safely.",
-      "facets": [
-        "analysis",
-        "investigation",
-        "local",
-        "read-only"
-      ],
-      "files": [
-        {
-          "content_type": "text/markdown",
-          "path": "SKILL.md",
-          "sha256": "84d8c9760979577d273cadf0c53a49004455852352ef7761ae226db7f015f19c",
-          "size_bytes": 4428
-        }
-      ],
-      "id": "rita",
-      "name": "rita",
-      "risk": "high",
-      "version": "0.1.0"
-    }
-  ]
+  "skills": []
 }
