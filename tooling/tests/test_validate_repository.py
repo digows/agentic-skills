@@ -194,6 +194,31 @@ class ValidateRepositoryTests(unittest.TestCase):
             validator._validate_catalog_sidecar(path, errors)
             self.assertTrue(any("requires upstream_compatibility" in error.message for error in errors))
 
+    def test_draft_networked_skill_can_defer_authentication_and_compatibility_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            path = Path(temporary_directory) / "skills" / "software-engineering" / "example-skill" / "catalog.json"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                """{
+  "schema_version": "1.0",
+  "id": "example-skill",
+  "version": "0.1.0",
+  "status": "draft",
+  "category": "software-engineering",
+  "facets": ["automation"],
+  "risk": "low",
+  "source": {"upstream": "https://example.com", "reviewed_at": "2026-09-05"},
+  "requirements": {"credentials": ["api-key"], "network_access": true, "tools": []},
+  "compatibility": [],
+  "evaluations": {"definition": "evals/definition.json", "baseline_report": "pending", "skill_report": "pending"}
+}""",
+                encoding="utf-8"
+            )
+            errors: list[validator.ValidationError] = []
+            validator._validate_catalog_sidecar(path, errors)
+            self.assertFalse(any("requires authentication metadata" in error.message for error in errors))
+            self.assertFalse(any("requires upstream_compatibility" in error.message for error in errors))
+
     def test_upstream_compatibility_requires_passing_evidence_and_skill_section(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             skill_directory = Path(temporary_directory) / "skills" / "software-engineering" / "example-skill"

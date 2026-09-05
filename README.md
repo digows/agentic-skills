@@ -32,7 +32,7 @@ The project exists to make specialized operational knowledge usable by both smal
 
 ## Status
 
-The repository is in its foundation phase. It contains no published skills yet. The first planned domains are n8n, GitLab, Home Assistant, MikroTik, UniFi, and RITA; they are tracked in [`catalog/planned-skills.json`](catalog/planned-skills.json), not represented by empty or activatable skills.
+The repository is in its foundation phase and contains no published skills yet. [`n8n-workflows`](skills/infrastructure-and-operations/n8n-workflows) is an unpublished lifecycle draft; GitLab, Home Assistant, MikroTik, UniFi, and RITA remain tracked in [`catalog/planned-skills.json`](catalog/planned-skills.json), not represented by empty or activatable skills.
 
 ## Repository layout
 
@@ -76,7 +76,7 @@ See [`docs/catalog-contract.md`](docs/catalog-contract.md) before adding a skill
 
 ## Planned domains
 
-The first domains are intentionally planned, not prematurely published: n8n, GitLab, Home Assistant, MikroTik, UniFi, and RITA. Every future skill must include a concrete authority boundary, compatibility evidence, and an evaluation definition before it is considered published.
+`n8n-workflows` is intentionally a draft until it has reproducible, passing evidence against supported public n8n targets. The remaining domains are intentionally planned, not prematurely published: GitLab, Home Assistant, MikroTik, UniFi, and RITA. Every future skill must include a concrete authority boundary, compatibility evidence, and an evaluation definition before it is considered published.
 
 ## Contributing
 

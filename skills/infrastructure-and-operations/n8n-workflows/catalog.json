@@ -1,33 +1,33 @@
 {
   "schema_version": "1.0",
-  "id": "n8n-public-api",
+  "id": "n8n-workflows",
   "version": "0.1.0",
   "status": "draft",
   "category": "infrastructure-and-operations",
-  "facets": ["automation", "integration", "remote-api", "external-write"],
+  "facets": ["automation", "configuration", "integration", "remote-api", "external-write"],
   "risk": "high",
   "source": {
-    "upstream": "https://docs.n8n.io/connect/n8n-api/api-reference/",
+    "upstream": "https://docs.n8n.io/connect/connect-to-n8n-mcp-server/",
     "reviewed_at": "2026-09-05"
   },
   "requirements": {
-    "credentials": ["n8n-api-key"],
+    "credentials": ["n8n-instance-access"],
     "network_access": true,
-    "tools": ["HTTP client"]
+    "tools": ["n8n instance MCP client or HTTP client"]
   },
   "authentication": {
-    "methods": ["api-key"],
+    "methods": ["oauth2", "api-key"],
     "target_binding": "exact-target",
     "prompting": "when-missing-or-invalid",
     "failure_behavior": "stop"
   },
   "upstream_compatibility": {
     "service": "n8n",
-    "api_version": "v1",
-    "supported_service_versions": ["n8n releases exposing Public API v1"],
+    "api_version": "Public API v1 and instance-level MCP",
+    "supported_service_versions": ["n8n releases exposing the selected required MCP tools or Public API v1 operation"],
     "capability_discovery": {
       "strategy": "runtime-probe",
-      "reference": "Retrieve the selected target's /api/v1/openapi.yml and use GET /api/v1/discover for optional or restricted operations when exposed."
+      "reference": "Inspect the selected target's MCP tool surface first; for Public API fallback retrieve /api/v1/openapi.yml and use GET /api/v1/discover when exposed."
     },
     "evidence": []
   },
