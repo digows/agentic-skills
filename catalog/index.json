@@ -1,4 +1,87 @@
 {
   "schema_version": "1.0",
-  "skills": []
+  "skills": [
+    {
+      "category": "infrastructure-and-operations",
+      "compatibility": [],
+      "description": "Design, validate, test, publish, and hand off n8n workflows using the official lifecycle skill, with a contract-first Public API fallback.",
+      "directory": "upstreams/n8n-workflows",
+      "facets": [
+        "automation",
+        "configuration",
+        "integration",
+        "remote-api",
+        "external-write"
+      ],
+      "files": [
+        {
+          "content_type": "text/markdown",
+          "path": "SKILL.md",
+          "sha256": "fb478e4c54655f6171e7bf699b720e7bdc993f4a76d94c5b562bb8a9cd358fcb",
+          "size_bytes": 16596,
+          "source_path": "skills/n8n-workflow-lifecycle-official/SKILL.md"
+        },
+        {
+          "content_type": "text/markdown",
+          "path": "references/TESTING.md",
+          "sha256": "d50577b3bf7e0d08d9bfd17022c33cd535fff38f646ee5274f26c7eb7b742ac6",
+          "size_bytes": 8179,
+          "source_path": "skills/n8n-workflow-lifecycle-official/references/TESTING.md"
+        },
+        {
+          "content_type": "text/markdown",
+          "path": "references/VALIDATION_CHECKLIST.md",
+          "sha256": "2752b1a2a1e8a555345a4e020a16ef294a2d2ea7ae9299f61d220ac2e3f00044",
+          "size_bytes": 9948,
+          "source_path": "skills/n8n-workflow-lifecycle-official/references/VALIDATION_CHECKLIST.md"
+        },
+        {
+          "content_type": "text/markdown",
+          "path": "references/NAMING_CONVENTIONS.md",
+          "sha256": "68809db8fe57c8a93dd90e8aa70d2770ae470e4e59ac3afe1f3ad3fd6c569574",
+          "size_bytes": 5709,
+          "source_path": "skills/n8n-workflow-lifecycle-official/references/NAMING_CONVENTIONS.md"
+        },
+        {
+          "content_type": "text/markdown",
+          "path": "references/FOLDER_LIMITATIONS.md",
+          "sha256": "dc3dd131f75be47c68e7b3119eb161a93bee3f5ff7609b99c33146297d0678a9",
+          "size_bytes": 1716,
+          "source_path": "skills/n8n-workflow-lifecycle-official/references/FOLDER_LIMITATIONS.md"
+        },
+        {
+          "content_type": "text/markdown",
+          "path": "references/MCP_ACCESS_PER_WORKFLOW.md",
+          "sha256": "a3b465cdb2e32cefb90212333f1c7444aff9760b8b4abbd895e21bea33bad0c3",
+          "size_bytes": 1641,
+          "source_path": "skills/n8n-workflow-lifecycle-official/references/MCP_ACCESS_PER_WORKFLOW.md"
+        },
+        {
+          "content_type": "text/markdown",
+          "path": "references/REVIEW_CHECKLIST.md",
+          "sha256": "a75598617a602ba6d18d7f7fd96c2069234fcd9463550141c45c9e1bede29334",
+          "size_bytes": 35574,
+          "source_path": "skills/n8n-workflow-lifecycle-official/references/REVIEW_CHECKLIST.md"
+        }
+      ],
+      "id": "n8n-workflows",
+      "name": "n8n-workflows",
+      "origin": {
+        "commit": "180b8415e3b73f78828cfa01e908e67f89f2a139",
+        "kind": "upstream",
+        "license": "Apache-2.0",
+        "overlay": [
+          {
+            "content": "### Public API fallback and target-bound authentication\n\n4. **Use the Public API only as a contract-first fallback.** Prefer the instance-level n8n MCP tools when they expose the needed operation. Otherwise, select one explicit n8n target, retrieve its `/api/v1/openapi.yml` before a version-sensitive or mutation request, and use `GET /api/v1/discover` when that target exposes it and capabilities, scopes, or schemas are uncertain. The selected target's interactive documentation is `/api/v1/docs`; the canonical source is [n8n's Public API OpenAPI contract](https://github.com/n8n-io/n8n/blob/master/packages/cli/src/public-api/v1/openapi.yml). Do not infer endpoints from UI traffic, another instance, or static endpoint lists. Do not use internal or editor APIs.\n5. **Bind access to the selected target.** Resolve the target before its local credential profile; reuse a valid profile without prompting. Request setup or reauthorization only when that profile is absent, unavailable, or rejected. On `401` or `403`, stop: never try a different target's credential, and never ask for a secret in chat. Credentials used inside workflows remain in n8n's credential system, not workflow JSON or expressions.\n6. **Do not invent an execution route.** The Public API fallback must not be represented as able to start a generic manual workflow execution unless the selected target's current OpenAPI explicitly provides that operation. Use the official MCP testing path or an already configured workflow trigger when appropriate.\n7. **Make workflow updates from the current contract and definition.** Retrieve an existing workflow before editing it. Construct the update payload only from fields accepted by the selected target's current OpenAPI; do not replay a response body or read-only settings. Preserve unrelated nodes, connections, identifiers, and node names. Connections are name-keyed, so a node rename requires every affected connection to be updated.\n8. **Treat active-workflow updates as potentially live.** A Public API update to an active workflow may create or activate a version depending on the selected target. Do not use it for a draft-only request unless current target behavior establishes that it is isolated. With explicit authority, record active and version state before the mutation, retrieve the workflow afterward, and report the observed state.\n9. **Let the target define pagination and runtime behavior.** Treat cursors as opaque and use only the pagination parameters in the selected endpoint's contract. Saving a Code node through the Public API does not prove it can run; do not assume Node.js or browser globals are available. Prefer native nodes, or validate required Code-node runtime behavior on the selected target before a production change.",
+            "operation": "append",
+            "section": "## Non-negotiables"
+          }
+        ],
+        "repository": "n8n-io/skills",
+        "reviewed_at": "2026-09-05"
+      },
+      "risk": "high",
+      "version": "1.0.0"
+    }
+  ]
 }

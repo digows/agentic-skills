@@ -32,7 +32,7 @@ The project exists to make specialized operational knowledge usable by both smal
 
 ## Status
 
-The repository is in its foundation phase and contains no published skills yet. [`n8n-workflows`](skills/infrastructure-and-operations/n8n-workflows) is an unpublished lifecycle draft; GitLab, Home Assistant, MikroTik, UniFi, and RITA remain tracked in [`catalog/planned-skills.json`](catalog/planned-skills.json), not represented by empty or activatable skills.
+The catalogue currently publishes [`n8n-workflows`](upstreams/n8n-workflows): the official n8n workflow-lifecycle skill, pinned to an immutable upstream commit and supplemented with a small contract-first Public API overlay. GitLab, Home Assistant, MikroTik, UniFi, and RITA remain tracked in [`catalog/planned-skills.json`](catalog/planned-skills.json), not represented by empty or activatable skills.
 
 ## Repository layout
 
@@ -42,6 +42,7 @@ skills/<category>/<skill-id>/
   catalog.json             # Repository catalogue sidecar
   evals/definition.json    # Reproducible evaluation contract
   adapters/<provider>/     # Optional, non-canonical provider packaging
+upstreams/<skill-id>/      # Pinned authoritative skill and optional local overlay
 schemas/                   # JSON Schema contracts
 catalog/                   # Taxonomy and planned-skill registry
 tooling/                   # Dependency-free validation and tests
@@ -78,7 +79,7 @@ See [`docs/catalog-contract.md`](docs/catalog-contract.md) before adding a skill
 
 ## Planned domains
 
-`n8n-workflows` is intentionally a draft until it has reproducible, passing evidence against supported public n8n targets. The remaining domains are intentionally planned, not prematurely published: GitLab, Home Assistant, MikroTik, UniFi, and RITA. Every future skill must include a concrete authority boundary, compatibility evidence, and an evaluation definition before it is considered published.
+The remaining domains are intentionally planned, not prematurely published: GitLab, Home Assistant, MikroTik, UniFi, and RITA. Every future skill must include a concrete authority boundary, compatibility evidence, and an evaluation definition before it is considered published.
 
 ## Contributing
 
