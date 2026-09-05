@@ -35,6 +35,8 @@ skills/<category>/<skill-id>/
 
 When `requirements.credentials` is non-empty, `catalog.json` must also contain the portable `authentication` policy defined in [`authentication-contract.md`](authentication-contract.md), and `SKILL.md` must contain an `## Authentication` section. The policy records how an agent must resolve and recover authentication; it never contains a secret, host inventory, or runtime-specific secret path.
 
+When `requirements.network_access` is `true`, `catalog.json` must also contain `upstream_compatibility` and `SKILL.md` must contain an `## Upstream compatibility` section. See [`upstream-compatibility-contract.md`](upstream-compatibility-contract.md). This is separate from `compatibility`: the former records target-service/API evidence, while the latter records agent-harness evidence.
+
 Categories are stable, broad groups in [`catalog/taxonomy.json`](../catalog/taxonomy.json). Facets describe the capability, artifact, execution context, and side effect without creating a directory hierarchy.
 
 ## Evaluations

@@ -170,6 +170,67 @@ class ValidateRepositoryTests(unittest.TestCase):
             validator._validate_catalog_sidecar(catalog_path, errors)
             self.assertTrue(any("must contain an '## Authentication' section" in error.message for error in errors))
 
+    def test_networked_skill_requires_upstream_compatibility(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            path = Path(temporary_directory) / "skills" / "software-engineering" / "example-skill" / "catalog.json"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                """{
+  "schema_version": "1.0",
+  "id": "example-skill",
+  "version": "1.0.0",
+  "status": "published",
+  "category": "software-engineering",
+  "facets": ["automation"],
+  "risk": "low",
+  "source": {"upstream": "https://example.com", "reviewed_at": "2026-09-05"},
+  "requirements": {"credentials": [], "network_access": true, "tools": []},
+  "compatibility": [],
+  "evaluations": {"definition": "evals/definition.json", "baseline_report": "baseline", "skill_report": "skill"}
+}""",
+                encoding="utf-8"
+            )
+            errors: list[validator.ValidationError] = []
+            validator._validate_catalog_sidecar(path, errors)
+            self.assertTrue(any("requires upstream_compatibility" in error.message for error in errors))
+
+    def test_upstream_compatibility_requires_passing_evidence_and_skill_section(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            skill_directory = Path(temporary_directory) / "skills" / "software-engineering" / "example-skill"
+            skill_directory.mkdir(parents=True)
+            (skill_directory / "SKILL.md").write_text(
+                "---\nname: example-skill\ndescription: Example.\n---\n# Example\n",
+                encoding="utf-8"
+            )
+            catalog_path = skill_directory / "catalog.json"
+            catalog_path.write_text(
+                """{
+  "schema_version": "1.0",
+  "id": "example-skill",
+  "version": "1.0.0",
+  "status": "published",
+  "category": "software-engineering",
+  "facets": ["automation"],
+  "risk": "low",
+  "source": {"upstream": "https://example.com", "reviewed_at": "2026-09-05"},
+  "requirements": {"credentials": [], "network_access": true, "tools": []},
+  "upstream_compatibility": {
+    "service": "Example API",
+    "api_version": "v1",
+    "supported_service_versions": ["1.x"],
+    "capability_discovery": {"strategy": "documentation", "reference": "https://example.com/docs"},
+    "evidence": [{"service_version": "1.0.0", "api_version": "v1", "verified_at": "2026-09-05", "result": "partial"}]
+  },
+  "compatibility": [],
+  "evaluations": {"definition": "evals/definition.json", "baseline_report": "baseline", "skill_report": "skill"}
+}""",
+                encoding="utf-8"
+            )
+            errors: list[validator.ValidationError] = []
+            validator._validate_catalog_sidecar(catalog_path, errors)
+            self.assertTrue(any("requires at least one passing evidence" in error.message for error in errors))
+            self.assertTrue(any("must contain an '## Upstream compatibility' section" in error.message for error in errors))
+
 
 if __name__ == "__main__":
     unittest.main()

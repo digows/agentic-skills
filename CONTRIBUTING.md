@@ -9,7 +9,8 @@ Thanks for helping build a portable, trustworthy skill catalogue.
 3. Add `SKILL.md`, `catalog.json`, and `evals/definition.json` together for every published skill.
 4. Keep provider-specific packaging in `adapters/<provider>/`; do not add provider-only fields to canonical frontmatter.
 5. For a skill that requires credentials, follow [`docs/authentication-contract.md`](docs/authentication-contract.md). Do not commit hosts, secret references, or credential values.
-6. Run the local quality gate:
+6. For a skill that accesses a network service, follow [`docs/upstream-compatibility-contract.md`](docs/upstream-compatibility-contract.md) and add evaluated target-service/API evidence.
+7. Run the local quality gate:
 
    ```bash
    python3 tooling/validate_repository.py
@@ -23,6 +24,7 @@ Thanks for helping build a portable, trustworthy skill catalogue.
 - Prefer short procedures, explicit defaults, checklists, and deterministic scripts over broad prose.
 - State prerequisites, authority boundaries, side effects, idempotency behavior, and failure handling.
 - For authenticated skills, resolve the explicit target before the credential, bind the credential to that target only, and stop on authentication failure without trying another profile.
+- For networked skills, state the supported target-service/API versions and use the declared capability-discovery mechanism before version-sensitive or restricted operations.
 - Add evaluations with realistic prompts and deterministic assertions. Compare against a no-skill baseline before calling a skill beneficial.
 - Add compatibility evidence rather than claiming universal support.
 

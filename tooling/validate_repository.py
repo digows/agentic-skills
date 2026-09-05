@@ -189,7 +189,7 @@ def _validate_catalog_sidecar(path: Path, errors: list[ValidationError]) -> None
         "schema_version", "id", "version", "status", "category", "facets", "risk", "source",
         "requirements", "compatibility", "evaluations"
     }
-    allowed_keys = required_keys | {"authentication"}
+    allowed_keys = required_keys | {"authentication", "upstream_compatibility"}
     catalog = _validate_required_keys(catalog, required_keys, allowed_keys, path, "catalog", errors)
     if catalog is None:
         return
@@ -238,6 +238,72 @@ def _validate_catalog_sidecar(path: Path, errors: list[ValidationError]) -> None
             _is_nonempty_string(item) for item in requirements["tools"]
         ):
             errors.append(ValidationError(path, "catalog requirements tools must be a string array"))
+
+    upstream_compatibility = catalog.get("upstream_compatibility")
+    if requirements is not None and requirements.get("network_access") is True and upstream_compatibility is None:
+        errors.append(ValidationError(path, "catalog requires upstream_compatibility when network_access is true"))
+    if upstream_compatibility is not None:
+        upstream_compatibility = _validate_required_keys(
+            upstream_compatibility,
+            {"service", "api_version", "supported_service_versions", "capability_discovery", "evidence"},
+            {"service", "api_version", "supported_service_versions", "capability_discovery", "evidence"},
+            path,
+            "catalog upstream_compatibility",
+            errors
+        )
+        if upstream_compatibility is not None:
+            for field in ("service", "api_version"):
+                if not _is_nonempty_string(upstream_compatibility.get(field)):
+                    errors.append(ValidationError(path, f"catalog upstream_compatibility {field} must be a non-empty string"))
+            supported_versions = upstream_compatibility.get("supported_service_versions")
+            if not isinstance(supported_versions, list) or not supported_versions or not all(
+                _is_nonempty_string(version) for version in supported_versions
+            ):
+                errors.append(ValidationError(path, "catalog upstream_compatibility supported_service_versions must be a non-empty string array"))
+            elif len(supported_versions) != len(set(supported_versions)):
+                errors.append(ValidationError(path, "catalog upstream_compatibility supported_service_versions must be unique"))
+            capability_discovery = _validate_required_keys(
+                upstream_compatibility.get("capability_discovery"),
+                {"strategy", "reference"},
+                {"strategy", "reference"},
+                path,
+                "catalog upstream_compatibility capability_discovery",
+                errors
+            )
+            if capability_discovery is not None:
+                if capability_discovery.get("strategy") not in {"runtime-probe", "published-openapi", "documentation", "none"}:
+                    errors.append(ValidationError(path, "catalog upstream_compatibility capability_discovery strategy is invalid"))
+                if not _is_nonempty_string(capability_discovery.get("reference")):
+                    errors.append(ValidationError(path, "catalog upstream_compatibility capability_discovery reference must be a non-empty string"))
+            evidence = upstream_compatibility.get("evidence")
+            if not isinstance(evidence, list) or not evidence:
+                errors.append(ValidationError(path, "catalog upstream_compatibility evidence must be a non-empty array"))
+            else:
+                has_passing_evidence = False
+                for index, item in enumerate(evidence):
+                    item = _validate_required_keys(
+                        item,
+                        {"service_version", "api_version", "verified_at", "result"},
+                        {"service_version", "api_version", "verified_at", "result"},
+                        path,
+                        f"catalog upstream_compatibility evidence[{index}]",
+                        errors
+                    )
+                    if item is None:
+                        continue
+                    if not _is_nonempty_string(item.get("service_version")) or not _is_nonempty_string(item.get("api_version")):
+                        errors.append(ValidationError(path, f"catalog upstream_compatibility evidence[{index}] versions must be non-empty strings"))
+                    if not _is_iso_date(item.get("verified_at")):
+                        errors.append(ValidationError(path, f"catalog upstream_compatibility evidence[{index}] verified_at must be an ISO date"))
+                    if item.get("result") not in {"pass", "partial", "fail"}:
+                        errors.append(ValidationError(path, f"catalog upstream_compatibility evidence[{index}] result is invalid"))
+                    if item.get("result") == "pass":
+                        has_passing_evidence = True
+                if not has_passing_evidence:
+                    errors.append(ValidationError(path, "catalog upstream_compatibility requires at least one passing evidence result"))
+        skill_path = path.parent / "SKILL.md"
+        if skill_path.is_file() and not re.search(r"^## Upstream compatibility\\s*$", skill_path.read_text(encoding="utf-8"), re.MULTILINE):
+            errors.append(ValidationError(skill_path, "networked skill must contain an '## Upstream compatibility' section"))
 
     authentication = catalog.get("authentication")
     credentials = requirements.get("credentials") if requirements is not None else None

@@ -70,6 +70,8 @@ The canonical `SKILL.md` contains only portable Agent Skills fields and instruct
 
 Skills that need credentials follow the portable [authentication contract](docs/authentication-contract.md): resolve an explicit target first, use only that target's local credential profile, reuse a valid credential without prompting, and stop rather than try another profile on authentication failure. The public MCP server never receives or manages those credentials.
 
+Skills that access network services also declare [upstream compatibility](docs/upstream-compatibility-contract.md): supported service/API versions, how capabilities are discovered on the selected target, and exact evaluated evidence. This is distinct from harness compatibility.
+
 See [`docs/catalog-contract.md`](docs/catalog-contract.md) before adding a skill and [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a pull request.
 
 ## Planned domains
