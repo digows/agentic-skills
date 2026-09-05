@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { createMcpHandler } from "agents/mcp/server";
 import { z } from "zod";
 import { CatalogError, findSkill, GitHubCatalogSource, listSkills, pageSkills, searchSkills } from "./catalog";
+import type { SkillSummary } from "./catalog";
 
 const source = new GitHubCatalogSource((input, init) => fetch(input, init));
 const handleMcp = createMcpHandler(createServer);
@@ -24,7 +25,7 @@ function createServer(): McpServer
   }, async ({ category, cursor, limit, risk }) => respond(async () => {
     const catalog = await source.load();
     const page = pageSkills(listSkills(catalog, category, risk), cursor, limit);
-    return { source_commit: catalog.sourceCommit, skills: page.items, next_cursor: page.nextCursor };
+    return { source_commit: catalog.sourceCommit, skills: page.items.map(describeSkill), next_cursor: page.nextCursor };
   }));
 
   server.registerTool("search_skills", {
@@ -37,7 +38,7 @@ function createServer(): McpServer
     }
   }, async ({ category, limit, query, risk }) => respond(async () => {
     const catalog = await source.load();
-    return { source_commit: catalog.sourceCommit, skills: searchSkills(catalog, query, category, risk).slice(0, limit) };
+    return { source_commit: catalog.sourceCommit, skills: searchSkills(catalog, query, category, risk).slice(0, limit).map(describeSkill) };
   }));
 
   server.registerTool("get_skill", {
@@ -47,7 +48,7 @@ function createServer(): McpServer
     const catalog = await source.load();
     const skill = findSkill(catalog, id);
     const content = await source.getFile(catalog, skill, "SKILL.md");
-    return { source_commit: catalog.sourceCommit, skill, content };
+    return { source_commit: catalog.sourceCommit, skill: describeSkill(skill), content };
   }));
 
   server.registerTool("get_skill_file", {
@@ -64,6 +65,21 @@ function createServer(): McpServer
   }));
 
   return server;
+}
+
+function describeSkill(skill: SkillSummary): Record<string, unknown>
+{
+  const origin = skill.origin.kind === "local"
+    ? { kind: "local" }
+    : {
+      kind: "upstream",
+      repository: skill.origin.repository,
+      commit: skill.origin.commit,
+      license: skill.origin.license,
+      reviewed_at: skill.origin.reviewed_at,
+      overlay_operations: skill.origin.overlay.map(({ operation, section }) => ({ operation, section }))
+    };
+  return { ...skill, origin };
 }
 
 async function respond(operation: () => Promise<unknown>)

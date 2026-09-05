@@ -258,6 +258,45 @@ class ValidateRepositoryTests(unittest.TestCase):
             self.assertIn("catalog api_contract_discovery target_path must be an absolute target path", messages)
             self.assertIn("catalog api_contract_discovery swagger_ui_path must be an absolute target path", messages)
 
+    def test_upstream_entry_requires_immutable_source_and_safe_overlay(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            entry_directory = Path(temporary_directory) / "upstreams" / "example-official"
+            entry_directory.mkdir(parents=True)
+            catalog_path = entry_directory / "catalog.json"
+            catalog_path.write_text(
+                """{
+  "schema_version": "1.0",
+  "id": "example-official",
+  "version": "1.0.0",
+  "status": "published",
+  "category": "software-engineering",
+  "facets": ["automation"],
+  "risk": "low",
+  "description": "Example.",
+  "source": {"repository": "example/skills", "commit": "main", "license": "Apache-2.0", "reviewed_at": "2026-09-05"},
+  "files": [{"path": "SKILL.md", "source_path": "../unsafe.md", "sha256": "invalid", "size_bytes": -1, "content_type": "text/markdown"}],
+  "compatibility": []
+}""",
+                encoding="utf-8"
+            )
+            (entry_directory / "overlay.json").write_text(
+                """{
+  "schema_version": "1.0",
+  "upstream_id": "other-skill",
+  "operations": [{"operation": "append", "section": "not a heading", "content": "x"}]
+}""",
+                encoding="utf-8"
+            )
+            errors: list[validator.ValidationError] = []
+            validator._validate_upstream_catalog(catalog_path, errors)
+            messages = [error.message for error in errors]
+            self.assertIn("upstream catalog source commit must be a full lowercase SHA", messages)
+            self.assertIn("upstream catalog files[0] source_path must be a safe relative path", messages)
+            self.assertIn("upstream catalog files[0] sha256 must be lowercase SHA-256", messages)
+            self.assertIn("upstream catalog files[0] size_bytes must be a non-negative integer", messages)
+            self.assertIn("upstream overlay identity must match its catalog", messages)
+            self.assertIn("upstream overlay operations[0] section must be a Markdown heading", messages)
+
     def test_upstream_compatibility_requires_passing_evidence_and_skill_section(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             skill_directory = Path(temporary_directory) / "skills" / "software-engineering" / "example-skill"

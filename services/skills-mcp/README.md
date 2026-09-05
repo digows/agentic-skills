@@ -12,7 +12,7 @@ After deployment, configure MCP-compatible clients with:
 }
 ```
 
-The Worker reads [`catalog/index.json`](../../catalog/index.json) from the public GitHub repository at the current `main` commit. It resolves that commit first, fetches every file by immutable SHA, and verifies the file digest declared by the index.
+The Worker reads [`catalog/index.json`](../../catalog/index.json) from the public GitHub repository at the current `main` commit. Local files are fetched from that immutable commit and verified against the index digest. Federated upstream files are fetched only from their manifest-declared GitHub repository and immutable commit, verified against their upstream digest, then resolved with any declared section overlay.
 
 ## Tools
 
@@ -21,7 +21,7 @@ The Worker reads [`catalog/index.json`](../../catalog/index.json) from the publi
 - `get_skill` retrieves canonical `SKILL.md` content.
 - `get_skill_file` retrieves only a file declared in the published manifest.
 
-The Worker never executes scripts, accepts credentials, fetches arbitrary URLs, or serves planned and draft skills. It has no secrets, storage binding, or write capability.
+The Worker never executes scripts or upstream hooks, accepts credentials, follows mutable upstream branches, fetches arbitrary URLs, or serves planned and draft skills. It has no secrets, storage binding, or write capability.
 
 ## Local checks
 

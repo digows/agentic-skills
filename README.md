@@ -49,6 +49,8 @@ tooling/                   # Dependency-free validation and tests
 
 Skills are grouped by their primary category for human navigation. The catalogue index and MCP server provide recursive discovery for agents, so category directories do not depend on a harness's filesystem-discovery behavior. A skill's directory category must match its `catalog.json` `category`.
 
+The catalogue can also list authoritative upstream skills without forking them. Those entries are pinned to an immutable upstream commit and file digest; a local overlay may append, replace, or remove a named instruction section when a reviewed complement is necessary. See [`docs/catalog-contract.md`](docs/catalog-contract.md#federated-upstream-skills-and-overlays).
+
 ## Quality gate
 
 Run the exact repository gate locally:
