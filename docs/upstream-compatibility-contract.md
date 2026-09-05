@@ -15,6 +15,11 @@ An applicable skill must declare `upstream_compatibility` in `catalog.json` and 
     "strategy": "runtime-probe",
     "reference": "GET /api/v1/discover before an optional or restricted operation"
   },
+  "openapi_contract": {
+    "source_url": "https://github.com/n8n-io/n8n/blob/master/packages/cli/src/public-api/v1/openapi.yml",
+    "target_path": "/api/v1/openapi.yml",
+    "swagger_ui_path": "/api/v1/docs"
+  },
   "evidence": [
     {
       "service_version": "1.80.0",
@@ -30,6 +35,7 @@ An applicable skill must declare `upstream_compatibility` in `catalog.json` and 
 - `api_version` identifies the API contract used by the skill.
 - `supported_service_versions` is a non-empty list of documented version ranges or exact versions. Use the upstream version syntax; do not imply that an untested version is verified.
 - `capability_discovery` states how the skill determines features available on a specific target. `runtime-probe` is preferred when the upstream provides a bounded discovery endpoint. `published-openapi` and `documentation` are valid when the exact service contract is available there. Use `none` only when the upstream has no capability-discovery mechanism, and state that reason in `reference`.
+- Before writing a networked skill, search for an official machine-readable API contract. When the upstream publishes OpenAPI, record `openapi_contract`: `source_url` is its official HTTPS source, `target_path` is the absolute path to retrieve from the selected target, and `swagger_ui_path` is the optional target-relative interactive documentation path. Retrieve the target contract before choosing a version-sensitive, optional, or mutation request. If no official OpenAPI contract exists, record that finding and the authoritative documentation searched in `capability_discovery.reference`; never reconstruct endpoints from UI traffic or unofficial collections.
 - `evidence` records exact service/API combinations that were evaluated. A published compatibility claim requires at least one passing result.
 
 ## Runtime behavior

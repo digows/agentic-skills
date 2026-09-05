@@ -3,7 +3,7 @@
 Use this path only when the required native MCP tool is unavailable.
 
 1. Normalize the selected n8n base URL without changing its host, port, or configured path prefix.
-2. Retrieve `<base-url>/api/v1/openapi.yml` when the target exposes it. Select the method, request schema, response schema, security scheme, and status codes from that exact contract.
+2. Open `<base-url>/api/v1/docs` when interactive Swagger UI helps inspect the selected target. Retrieve `<base-url>/api/v1/openapi.yml` as the machine-readable authority. Select the method, request schema, response schema, security scheme, and status codes from that exact contract.
 3. For optional or restricted operations, call `GET <base-url>/api/v1/discover` only with query parameters documented by that target contract.
 4. Send a resolved API key only in `X-N8N-API-KEY`; never log or return the value.
 5. Do not substitute an internal endpoint, API method from another instance, or MCP-only behavior when the target contract lacks the requested operation.

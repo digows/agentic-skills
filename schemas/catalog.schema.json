@@ -71,6 +71,16 @@
             "reference": { "type": "string", "minLength": 1 }
           }
         },
+        "openapi_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source_url", "target_path"],
+          "properties": {
+            "source_url": { "type": "string", "format": "uri" },
+            "target_path": { "type": "string", "pattern": "^/" },
+            "swagger_ui_path": { "type": "string", "pattern": "^/" }
+          }
+        },
         "evidence": {
           "type": "array",
           "items": {

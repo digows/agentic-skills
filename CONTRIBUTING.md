@@ -9,7 +9,7 @@ Thanks for helping build a portable, trustworthy skill catalogue.
 3. Add `SKILL.md`, `catalog.json`, and `evals/definition.json` together for every published skill.
 4. Keep provider-specific packaging in `adapters/<provider>/`; do not add provider-only fields to canonical frontmatter.
 5. For a skill that requires credentials, follow [`docs/authentication-contract.md`](docs/authentication-contract.md). Do not commit hosts, secret references, or credential values.
-6. For a skill that accesses a network service, follow [`docs/upstream-compatibility-contract.md`](docs/upstream-compatibility-contract.md) and add evaluated target-service/API evidence.
+6. For a skill that accesses a network service, first search for an official OpenAPI contract. Follow [`docs/upstream-compatibility-contract.md`](docs/upstream-compatibility-contract.md), record that contract when it exists, and add evaluated target-service/API evidence.
 7. Run the local quality gate:
 
    ```bash

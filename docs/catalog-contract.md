@@ -37,6 +37,8 @@ When `requirements.credentials` is non-empty, `catalog.json` must also contain t
 
 When `requirements.network_access` is `true`, `catalog.json` must also contain `upstream_compatibility` and `SKILL.md` must contain an `## Upstream compatibility` section. See [`upstream-compatibility-contract.md`](upstream-compatibility-contract.md). This is separate from `compatibility`: the former records target-service/API evidence, while the latter records agent-harness evidence.
 
+For every networked skill, contributors must first search for an official OpenAPI contract. When found, record its official source and the target-relative retrieval path in `upstream_compatibility.openapi_contract`; use the selected target's contract at runtime instead of inferring endpoints from prose, UI traffic, or another deployment.
+
 Categories are stable, broad groups in [`catalog/taxonomy.json`](../catalog/taxonomy.json). Facets describe the capability, artifact, execution context, and side effect without creating a directory hierarchy.
 
 ## Evaluations

@@ -219,6 +219,41 @@ class ValidateRepositoryTests(unittest.TestCase):
             self.assertFalse(any("requires authentication metadata" in error.message for error in errors))
             self.assertFalse(any("requires upstream_compatibility" in error.message for error in errors))
 
+    def test_openapi_contract_requires_official_source_and_absolute_target_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            path = Path(temporary_directory) / "skills" / "software-engineering" / "example-skill" / "catalog.json"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                """{
+  "schema_version": "1.0",
+  "id": "example-skill",
+  "version": "0.1.0",
+  "status": "draft",
+  "category": "software-engineering",
+  "facets": ["automation"],
+  "risk": "low",
+  "source": {"upstream": "https://example.com", "reviewed_at": "2026-09-05"},
+  "requirements": {"credentials": [], "network_access": true, "tools": []},
+  "upstream_compatibility": {
+    "service": "Example API",
+    "api_version": "v1",
+    "supported_service_versions": ["1.x"],
+    "capability_discovery": {"strategy": "published-openapi", "reference": "https://example.com/docs"},
+    "openapi_contract": {"source_url": "http://example.com/openapi.json", "target_path": "openapi.json", "swagger_ui_path": "docs"},
+    "evidence": []
+  },
+  "compatibility": [],
+  "evaluations": {"definition": "evals/definition.json", "baseline_report": "pending", "skill_report": "pending"}
+}""",
+                encoding="utf-8"
+            )
+            errors: list[validator.ValidationError] = []
+            validator._validate_catalog_sidecar(path, errors)
+            messages = [error.message for error in errors]
+            self.assertIn("catalog upstream_compatibility openapi_contract source_url must be an HTTPS URL", messages)
+            self.assertIn("catalog upstream_compatibility openapi_contract target_path must be an absolute target path", messages)
+            self.assertIn("catalog upstream_compatibility openapi_contract swagger_ui_path must be an absolute target path", messages)
+
     def test_upstream_compatibility_requires_passing_evidence_and_skill_section(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             skill_directory = Path(temporary_directory) / "skills" / "software-engineering" / "example-skill"
