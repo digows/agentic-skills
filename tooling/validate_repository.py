@@ -42,7 +42,7 @@ ALLOWED_FRONTMATTER_KEYS = {
     "metadata",
     "allowed-tools"
 }
-EXPECTED_PLANNED_IDS = {"n8n", "gitlab", "home-assistant", "mikrotik", "unifi"}
+EXPECTED_PLANNED_IDS = {"n8n", "gitlab", "home-assistant", "mikrotik", "unifi", "rita"}
 VALID_CATEGORIES = {
     "software-engineering",
     "data-and-ai",
