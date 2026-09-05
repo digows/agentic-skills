@@ -204,6 +204,8 @@ def _validate_catalog_sidecar(path: Path, errors: list[ValidationError]) -> None
         errors.append(ValidationError(path, "catalog status is invalid"))
     if catalog.get("category") not in VALID_CATEGORIES:
         errors.append(ValidationError(path, "catalog category is not in catalog/taxonomy.json"))
+    elif path.parent.parent.name != catalog["category"]:
+        errors.append(ValidationError(path, "catalog category must match the skill category directory"))
     facets = catalog.get("facets")
     if not isinstance(facets, list) or not facets or not all(_is_nonempty_string(item) for item in facets):
         errors.append(ValidationError(path, "catalog facets must be a non-empty string array"))
@@ -483,6 +485,35 @@ def _validate_workflows(root: Path, errors: list[ValidationError]) -> None:
                 errors.append(ValidationError(path, "validation workflow must run for pull requests and pushes"))
 
 
+def _validate_skill_directory_layout(root: Path, errors: list[ValidationError]) -> None:
+    skills_directory = root / "skills"
+    if not skills_directory.is_dir():
+        return
+    for category_directory in sorted(skills_directory.iterdir()):
+        if category_directory.name == "README.md":
+            continue
+        if not category_directory.is_dir():
+            errors.append(ValidationError(category_directory, "skills directory may contain only category directories and README.md"))
+            continue
+        if category_directory.name not in VALID_CATEGORIES:
+            errors.append(ValidationError(category_directory, "skill category directory is not in catalog/taxonomy.json"))
+            continue
+        for skill_directory in sorted(category_directory.iterdir()):
+            if skill_directory.name == "README.md":
+                continue
+            if not skill_directory.is_dir():
+                errors.append(ValidationError(skill_directory, "category directory may contain only skill directories and README.md"))
+                continue
+            if not SKILL_IDENTIFIER_PATTERN.fullmatch(skill_directory.name):
+                errors.append(ValidationError(skill_directory, "skill directory name must be lowercase kebab-case"))
+
+    for skill_path in sorted(skills_directory.glob("*/SKILL.md")):
+        errors.append(ValidationError(skill_path, "skill must be located at skills/<category>/<skill-id>/SKILL.md"))
+    for catalog_path in sorted(skills_directory.rglob("catalog.json")):
+        if len(catalog_path.relative_to(skills_directory).parts) != 3:
+            errors.append(ValidationError(catalog_path, "catalog sidecar must be located at skills/<category>/<skill-id>/catalog.json"))
+
+
 def validate_repository(root: Path) -> list[ValidationError]:
     root = root.resolve()
     errors: list[ValidationError] = []
@@ -507,11 +538,12 @@ def validate_repository(root: Path) -> list[ValidationError]:
     _validate_schema_documents(root, errors)
     _validate_taxonomy(root / "catalog" / "taxonomy.json", errors)
     _validate_planned_skills(root / "catalog" / "planned-skills.json", errors)
-    for skill_path in sorted((root / "skills").glob("*/SKILL.md")) if (root / "skills").is_dir() else []:
+    _validate_skill_directory_layout(root, errors)
+    for skill_path in sorted((root / "skills").glob("*/*/SKILL.md")) if (root / "skills").is_dir() else []:
         _validate_skill(skill_path, errors)
-    for catalog_path in sorted((root / "skills").glob("*/catalog.json")) if (root / "skills").is_dir() else []:
+    for catalog_path in sorted((root / "skills").glob("*/*/catalog.json")) if (root / "skills").is_dir() else []:
         _validate_catalog_sidecar(catalog_path, errors)
-    for evaluation_path in sorted((root / "skills").glob("*/evals/*.json")) if (root / "skills").is_dir() else []:
+    for evaluation_path in sorted((root / "skills").glob("*/*/evals/*.json")) if (root / "skills").is_dir() else []:
         _validate_evaluation_definition(evaluation_path, errors)
     _validate_links(root, errors)
     _validate_secrets(root, errors)

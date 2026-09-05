@@ -24,7 +24,10 @@ def build_index(root: Path) -> dict[str, Any]:
     if not skills_directory.is_dir():
         return {"schema_version": SCHEMA_VERSION, "skills": skills}
 
-    for catalog_path in sorted(skills_directory.glob("*/catalog.json")):
+    for catalog_path in sorted(skills_directory.rglob("catalog.json")):
+        relative_catalog_path = catalog_path.relative_to(skills_directory)
+        if len(relative_catalog_path.parts) != 3:
+            raise ValueError(f"{catalog_path}: catalog sidecar must be located at skills/<category>/<skill-id>/catalog.json")
         catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
         if catalog.get("status") != "published":
             continue
@@ -36,6 +39,7 @@ def build_index(root: Path) -> dict[str, Any]:
         skills.append(
             {
                 "id": catalog["id"],
+                "directory": skill_directory.relative_to(root).as_posix(),
                 "name": catalog["id"],
                 "description": read_skill_description(skill_path),
                 "version": catalog["version"],

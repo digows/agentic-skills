@@ -13,14 +13,14 @@ Do not put provider-specific frontmatter, credentials, or user-specific configur
 ## Required published-skill files
 
 ```text
-skills/<skill-id>/
+skills/<category>/<skill-id>/
   SKILL.md
   catalog.json
   evals/
     definition.json
 ```
 
-`<skill-id>` and the `name` frontmatter value are lowercase kebab-case and must match. Published skills live immediately below `skills/`; category nesting is not supported.
+`<skill-id>` and the `name` frontmatter value are lowercase kebab-case and must match. `<category>` must be one of the stable categories in [`catalog/taxonomy.json`](../catalog/taxonomy.json) and must match `catalog.json.category`. This directory level is for repository navigation; agents discover skills through the generated catalogue index or MCP tools.
 
 ## Catalogue metadata
 

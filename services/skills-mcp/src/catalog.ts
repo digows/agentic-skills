@@ -1,6 +1,7 @@
 export const MAX_FILE_BYTES = 96 * 1024;
 const IDENTIFIER_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const COMMIT_PATTERN = /^[0-9a-f]{40}$/;
+const SKILL_DIRECTORY_PATTERN = /^skills\/([a-z0-9]+(?:-[a-z0-9]+)*)\/([a-z0-9]+(?:-[a-z0-9]+)*)$/;
 
 export interface SkillFile
 {
@@ -15,6 +16,7 @@ export interface SkillSummary
   category: string;
   compatibility: Array<Record<string, unknown>>;
   description: string;
+  directory: string;
   facets: string[];
   files: SkillFile[];
   id: string;
@@ -103,7 +105,7 @@ export class GitHubCatalogSource
     {
       throw new CatalogError("Requested file exceeds the maximum allowed size.");
     }
-    const response = await this.fetchImplementation(this.rawUrl(catalog.sourceCommit, `skills/${skill.id}/${file.path}`), {
+    const response = await this.fetchImplementation(this.rawUrl(catalog.sourceCommit, `${skill.directory}/${file.path}`), {
       headers: { "User-Agent": "agentic-skills-mcp/0.1.0" },
       cf: { cacheEverything: true, cacheTtl: 3600 }
     } as RequestInit);
@@ -241,9 +243,12 @@ function isValidSkill(value: unknown): value is SkillSummary
     return false;
   }
   const skill = value as Partial<SkillSummary>;
+  const directoryMatch = typeof skill.directory === "string" ? SKILL_DIRECTORY_PATTERN.exec(skill.directory) : undefined;
   return typeof skill.id === "string" && IDENTIFIER_PATTERN.test(skill.id)
     && typeof skill.name === "string" && typeof skill.description === "string"
     && typeof skill.version === "string" && typeof skill.category === "string"
+    && directoryMatch !== undefined && directoryMatch !== null
+    && directoryMatch[1] === skill.category && directoryMatch[2] === skill.id
     && typeof skill.risk === "string" && Array.isArray(skill.facets)
     && Array.isArray(skill.compatibility) && Array.isArray(skill.files)
     && skill.files.every((file) => typeof file.path === "string" && !file.path.includes("..")

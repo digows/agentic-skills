@@ -5,7 +5,7 @@ Thanks for helping build a portable, trustworthy skill catalogue.
 ## Before opening a pull request
 
 1. Read [`docs/catalog-contract.md`](docs/catalog-contract.md).
-2. Keep a portable skill in one flat directory: `skills/<skill-id>/`.
+2. Keep a portable skill in its primary category directory: `skills/<category>/<skill-id>/`. The directory category must match `catalog.json.category`.
 3. Add `SKILL.md`, `catalog.json`, and `evals/definition.json` together for every published skill.
 4. Keep provider-specific packaging in `adapters/<provider>/`; do not add provider-only fields to canonical frontmatter.
 5. Run the local quality gate:

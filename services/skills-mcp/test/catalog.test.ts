@@ -4,7 +4,7 @@ import worker from "../src/index";
 
 const skill = {
   id: "example-skill", name: "example-skill", description: "Automates example workflow tasks.", version: "1.0.0",
-  category: "infrastructure-and-operations", facets: ["automation"], risk: "moderate", compatibility: [],
+  directory: "skills/infrastructure-and-operations/example-skill", category: "infrastructure-and-operations", facets: ["automation"], risk: "moderate", compatibility: [],
   files: [{ path: "SKILL.md", sha256: "a".repeat(64), size_bytes: 12, content_type: "text/markdown" }]
 };
 
@@ -32,6 +32,14 @@ describe("catalog discovery", () => {
     const mockFetch = async (url: string) => url.includes("git/ref")
       ? Response.json({ object: { sha: "b".repeat(40) } })
       : Response.json({ schema_version: "1.0", skills: [{ id: "../unsafe" }] });
+    const source = new GitHubCatalogSource(mockFetch as typeof fetch, "digows/agentic-skills", "main", 0);
+    await expect(source.load()).rejects.toBeInstanceOf(CatalogError);
+  });
+
+  it("rejects a skill whose directory does not match its category and identifier", async () => {
+    const mockFetch = async (url: string) => url.includes("git/ref")
+      ? Response.json({ object: { sha: "b".repeat(40) } })
+      : Response.json({ schema_version: "1.0", skills: [{ ...skill, directory: "skills/software-engineering/other-skill" }] });
     const source = new GitHubCatalogSource(mockFetch as typeof fetch, "digows/agentic-skills", "main", 0);
     await expect(source.load()).rejects.toBeInstanceOf(CatalogError);
   });

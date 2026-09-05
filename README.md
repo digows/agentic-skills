@@ -37,7 +37,7 @@ The repository is in its foundation phase. It contains no published skills yet. 
 ## Repository layout
 
 ```text
-skills/<skill-id>/
+skills/<category>/<skill-id>/
   SKILL.md                 # Portable Agent Skills entrypoint
   catalog.json             # Repository catalogue sidecar
   evals/definition.json    # Reproducible evaluation contract
@@ -47,7 +47,7 @@ catalog/                   # Taxonomy and planned-skill registry
 tooling/                   # Dependency-free validation and tests
 ```
 
-Skills are deliberately flat under `skills/`. Categories are catalogue metadata, not directories, because discovery behavior is not consistently recursive across agent harnesses.
+Skills are grouped by their primary category for human navigation. The catalogue index and MCP server provide recursive discovery for agents, so category directories do not depend on a harness's filesystem-discovery behavior. A skill's directory category must match its `catalog.json` `category`.
 
 ## Quality gate
 
